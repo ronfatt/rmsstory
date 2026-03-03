@@ -1,0 +1,251 @@
+"use client";
+
+import { useMemo, useState, useTransition } from "react";
+import Link from "next/link";
+import { CoverArt } from "@/components/novels/cover-art";
+import type { AdminDraftBook, AdminPublishedBook } from "@/lib/admin-library";
+
+type LibraryManagerProps = {
+  publishedBooks: AdminPublishedBook[];
+  draftBooks: AdminDraftBook[];
+};
+
+export function LibraryManager({ publishedBooks, draftBooks }: LibraryManagerProps) {
+  const [adminToken, setAdminToken] = useState("");
+  const [query, setQuery] = useState("");
+  const [genreFilter, setGenreFilter] = useState("all");
+  const [view, setView] = useState<"all" | "published" | "drafts">("all");
+  const [feedback, setFeedback] = useState<string>("");
+  const [isPending, startTransition] = useTransition();
+
+  const genres = useMemo(() => {
+    const allGenres = [...publishedBooks.map((book) => book.genre), ...draftBooks.map((book) => book.genre)];
+    return ["all", ...new Set(allGenres)];
+  }, [draftBooks, publishedBooks]);
+
+  const normalizedQuery = query.trim().toLowerCase();
+
+  const filteredPublished = publishedBooks.filter((book) => {
+    if (genreFilter !== "all" && book.genre !== genreFilter) {
+      return false;
+    }
+    if (!normalizedQuery) {
+      return true;
+    }
+    return `${book.title} ${book.genre} ${book.status}`.toLowerCase().includes(normalizedQuery);
+  });
+
+  const filteredDrafts = draftBooks.filter((book) => {
+    if (genreFilter !== "all" && book.genre !== genreFilter) {
+      return false;
+    }
+    if (!normalizedQuery) {
+      return true;
+    }
+    return `${book.title} ${book.genre} ${book.premise}`.toLowerCase().includes(normalizedQuery);
+  });
+
+  async function runAction(url: string, body: Record<string, string>, successMessage: string) {
+    startTransition(async () => {
+      setFeedback("");
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-token": adminToken,
+        },
+        body: JSON.stringify(body),
+      });
+
+      const payload = (await response.json()) as { error?: string; slug?: string };
+
+      if (!response.ok) {
+        setFeedback(payload.error ?? "Action failed.");
+        return;
+      }
+
+      setFeedback(successMessage);
+      window.location.reload();
+    });
+  }
+
+  return (
+    <div className="space-y-8">
+      <section className="glass rounded-[28px] p-5">
+        <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr_0.8fr_1fr]">
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Cari tajuk, genre, premis"
+            className="rounded-[16px] border border-[var(--border)] bg-white/80 px-4 py-3 text-sm outline-none"
+          />
+          <select
+            value={genreFilter}
+            onChange={(event) => setGenreFilter(event.target.value)}
+            className="rounded-[16px] border border-[var(--border)] bg-white/80 px-4 py-3 text-sm outline-none"
+          >
+            {genres.map((genre) => (
+              <option key={genre} value={genre}>
+                {genre === "all" ? "Semua genre" : genre}
+              </option>
+            ))}
+          </select>
+          <select
+            value={view}
+            onChange={(event) => setView(event.target.value as "all" | "published" | "drafts")}
+            className="rounded-[16px] border border-[var(--border)] bg-white/80 px-4 py-3 text-sm outline-none"
+          >
+            <option value="all">Semua</option>
+            <option value="published">已上架</option>
+            <option value="drafts">草稿</option>
+          </select>
+          <input
+            type="password"
+            value={adminToken}
+            onChange={(event) => setAdminToken(event.target.value)}
+            placeholder="Admin token untuk tindakan"
+            className="rounded-[16px] border border-[var(--border)] bg-white/80 px-4 py-3 text-sm outline-none"
+          />
+        </div>
+        {feedback ? <p className="mt-4 text-sm text-[var(--accent-deep)]">{feedback}</p> : null}
+      </section>
+
+      {view !== "drafts" ? (
+        <section>
+          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.28em] text-[var(--accent)]">已生成书籍</p>
+              <h2 className="mt-3 text-3xl font-semibold text-[var(--accent-deep)]">Koleksi yang sudah terbit</h2>
+            </div>
+            <p className="text-sm leading-7 text-[var(--muted)]">{filteredPublished.length} hasil carian</p>
+          </div>
+          <div className="mt-6 grid gap-6 lg:grid-cols-3">
+            {filteredPublished.map((book) => (
+              <article key={book.id} className="glass rounded-[30px] p-5">
+                <CoverArt
+                  title={book.title}
+                  tagline={book.status}
+                  genre={book.genre}
+                  coverTone="from-stone-300 via-zinc-500 to-stone-900"
+                  coverImageUrl={book.coverThumbnailUrl ?? book.coverImageUrl}
+                  className="min-h-[280px] rounded-[24px]"
+                  titleClassName="max-w-[12rem] text-3xl"
+                  taglineClassName="max-w-[13rem] text-sm"
+                />
+                <div className="mt-5 space-y-2 text-sm text-[var(--muted)]">
+                  <p>{book.chapterCount} bab terbit</p>
+                  <p>{book.status}</p>
+                  <p>{book.publishedAt ? new Date(book.publishedAt).toLocaleDateString("ms-MY") : ""}</p>
+                </div>
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <Link
+                    href={`/novels/${book.slug}`}
+                    className="text-sm font-semibold text-[var(--accent-deep)] underline underline-offset-4"
+                  >
+                    Buka halaman buku
+                  </Link>
+                  <button
+                    type="button"
+                    disabled={isPending || !adminToken}
+                    onClick={() =>
+                      runAction(
+                        "/api/admin/archive-book",
+                        { bookId: book.id },
+                        `Buku "${book.title}" telah diarkibkan.`,
+                      )
+                    }
+                    className="text-sm font-semibold text-[var(--foreground)] underline underline-offset-4 disabled:opacity-60"
+                  >
+                    Arkibkan
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {view !== "published" ? (
+        <section>
+          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.28em] text-[var(--accent)]">草稿书籍</p>
+              <h2 className="mt-3 text-3xl font-semibold text-[var(--accent-deep)]">Draft yang sedia untuk dipublish</h2>
+            </div>
+            <p className="text-sm leading-7 text-[var(--muted)]">{filteredDrafts.length} hasil carian</p>
+          </div>
+          <div className="mt-6 grid gap-6 lg:grid-cols-2">
+            {filteredDrafts.map((book) => (
+              <article key={book.id} className="glass rounded-[30px] p-5">
+                <div className="grid gap-5 md:grid-cols-[220px_1fr]">
+                  <CoverArt
+                    title={book.title}
+                    tagline={book.genre}
+                    genre="Draft"
+                    coverTone="from-orange-200 via-amber-400 to-red-700"
+                    coverImageUrl={book.coverThumbnailUrl ?? book.coverImageUrl}
+                    className="min-h-[300px] rounded-[24px]"
+                    titleClassName="max-w-[11rem] text-2xl"
+                    taglineClassName="max-w-[11rem] text-sm"
+                  />
+                  <div>
+                    <h3 className="text-2xl font-semibold text-[var(--accent-deep)]">{book.title}</h3>
+                    <p className="mt-3 text-sm leading-7 text-[var(--muted)]">{book.premise}</p>
+                    <div className="mt-5 grid gap-3 md:grid-cols-3">
+                      <StatCard label="Genre" value={book.genre} />
+                      <StatCard label="Outline" value={`${book.outlineCount} bab`} />
+                      <StatCard label="Draft" value={`${book.draftCount} versi`} />
+                    </div>
+                    <p className="mt-5 text-sm text-[var(--muted)]">
+                      Dijana pada {new Date(book.createdAt).toLocaleDateString("ms-MY")}
+                    </p>
+                    <div className="mt-5 flex flex-wrap gap-3">
+                      <button
+                        type="button"
+                        disabled={isPending || !adminToken}
+                        onClick={() =>
+                          runAction(
+                            "/api/admin/publish-draft",
+                            { bibleId: book.id },
+                            `Draft "${book.title}" telah dipublish.`,
+                          )
+                        }
+                        className="rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
+                      >
+                        Publish ke books
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isPending || !adminToken}
+                        onClick={() =>
+                          runAction(
+                            "/api/admin/delete-draft",
+                            { bibleId: book.id },
+                            `Draft "${book.title}" telah dipadam.`,
+                          )
+                        }
+                        className="rounded-full border border-[var(--border)] bg-white/80 px-5 py-3 text-sm font-semibold text-[var(--foreground)] disabled:opacity-60"
+                      >
+                        Padam draft
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
+    </div>
+  );
+}
+
+function StatCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[18px] border border-[var(--border)] bg-white/75 p-4">
+      <p className="text-xs uppercase tracking-[0.22em] text-[var(--muted)]">{label}</p>
+      <p className="mt-2 text-sm font-semibold text-[var(--accent-deep)]">{value}</p>
+    </div>
+  );
+}

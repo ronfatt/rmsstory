@@ -10,6 +10,7 @@ export type AdminPublishedBook = {
   coverImageUrl?: string;
   coverThumbnailUrl?: string;
   chapterCount: number;
+  publishedAt?: string;
 };
 
 export type AdminDraftBook = {
@@ -45,7 +46,7 @@ export const getAdminLibraryOverview = cache(async (): Promise<AdminLibraryOverv
   ] = await Promise.all([
     supabase
       .from("books")
-      .select("id, slug, title, genre, status, cover_image_url, cover_thumbnail_url, chapters(count)")
+      .select("id, slug, title, genre, status, cover_image_url, cover_thumbnail_url, published_at, chapters(count)")
       .order("published_at", { ascending: false }),
     supabase
       .from("book_bibles")
@@ -73,6 +74,7 @@ export const getAdminLibraryOverview = cache(async (): Promise<AdminLibraryOverv
       coverImageUrl: book.cover_image_url ?? undefined,
       coverThumbnailUrl: book.cover_thumbnail_url ?? undefined,
       chapterCount: Array.isArray(book.chapters) ? Number(book.chapters[0]?.count ?? 0) : 0,
+      publishedAt: book.published_at ?? undefined,
     })) ?? [];
 
   const selectedDraftCovers = new Map(
