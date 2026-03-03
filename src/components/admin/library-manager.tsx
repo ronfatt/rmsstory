@@ -29,6 +29,7 @@ export function LibraryManager({ publishedBooks, draftBooks }: LibraryManagerPro
   const [releaseMinute, setReleaseMinute] = useState("0");
   const [isPending, startTransition] = useTransition();
   const [editingDraftId, setEditingDraftId] = useState<string | null>(null);
+  const [previewDraftId, setPreviewDraftId] = useState<string | null>(null);
   const [draftForm, setDraftForm] = useState({
     title: "",
     genre: "",
@@ -372,6 +373,16 @@ export function LibraryManager({ publishedBooks, draftBooks }: LibraryManagerPro
                       </Link>
                       <button
                         type="button"
+                        disabled={!book.latestDraftTitle}
+                        onClick={() =>
+                          setPreviewDraftId((current) => (current === book.id ? null : book.id))
+                        }
+                        className="rounded-full border border-[var(--border)] bg-white/80 px-5 py-3 text-sm font-semibold text-[var(--foreground)] disabled:opacity-60"
+                      >
+                        {previewDraftId === book.id ? "收起当前内容" : "查看当前内容"}
+                      </button>
+                      <button
+                        type="button"
                         disabled={isPending || !adminToken || !book.nextChapterNumber}
                         onClick={() => handleGenerateNextDraft(book.id, book.title)}
                         className="rounded-full border border-[var(--border)] bg-white/80 px-5 py-3 text-sm font-semibold text-[var(--foreground)] disabled:opacity-60"
@@ -476,6 +487,34 @@ export function LibraryManager({ publishedBooks, draftBooks }: LibraryManagerPro
                             取消
                           </button>
                         </div>
+                      </div>
+                    ) : null}
+                    {previewDraftId === book.id && book.latestDraftTitle ? (
+                      <div className="mt-5 rounded-[24px] border border-[var(--border)] bg-white/70 p-4">
+                        <p className="text-xs uppercase tracking-[0.22em] text-[var(--muted)]">
+                          当前内容预览
+                        </p>
+                        <h4 className="mt-3 text-xl font-semibold text-[var(--accent-deep)]">
+                          第 {book.latestDraftChapter} 章 · {book.latestDraftTitle}
+                        </h4>
+                        {book.latestDraftExcerpt ? (
+                          <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
+                            {book.latestDraftExcerpt}
+                          </p>
+                        ) : null}
+                        <div className="mt-4 space-y-4">
+                          {book.latestDraftPreview?.map((paragraph, index) => (
+                            <p
+                              key={`${book.id}-preview-${index + 1}`}
+                              className="text-sm leading-7 text-[var(--foreground)]"
+                            >
+                              {paragraph}
+                            </p>
+                          ))}
+                        </div>
+                        <p className="mt-4 text-xs leading-6 text-[var(--muted)]">
+                          这里只展示前两段预览。点“继续生成”后，高级模式会载入这本草稿的完整上下文继续写。
+                        </p>
                       </div>
                     ) : null}
                   </div>

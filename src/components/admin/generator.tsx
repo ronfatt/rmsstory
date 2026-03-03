@@ -51,10 +51,10 @@ const initialPremise =
   "Seorang wanita miskin yang dihina keluarganya kembali ke bandar asal selepas kematian neneknya, lalu mendapati dia sebenarnya pewaris utama empayar keluarga yang kini cuba dirampas oleh lelaki yang pernah memusnahkan hidupnya.";
 const adminTokenStorageKey = "rmsstory-admin-token";
 
-export function AdminGenerator() {
-  const draftIdFromUrl =
-    typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("bibleId");
+export function AdminGenerator({ initialDraftId = null }: { initialDraftId?: string | null }) {
+  const draftIdFromUrl = initialDraftId;
   const loadedDraftRef = useRef<string | null>(null);
+  const advancedRef = useRef<HTMLDetailsElement | null>(null);
   const [premise, setPremise] = useState(initialPremise);
   const [genre, setGenre] = useState("Romansa Drama / Warisan / Balas Dendam");
   const [tone, setTone] = useState("emosi tinggi, dramatik, ketagihan, cliffhanger keras");
@@ -141,8 +141,13 @@ export function AdminGenerator() {
       }
 
       loadedDraftRef.current = draftId;
+      if (advancedRef.current) {
+        advancedRef.current.open = true;
+      }
       setPremise(payload.data.premise);
       setGenre(payload.data.genre);
+      setTone(String((payload.data.bible as { toneGuide?: string }).toneGuide ?? tone));
+      setAudience(payload.data.bible.audience);
       setBibleResult({
         data: payload.data.bible,
         saved: true,
@@ -161,6 +166,7 @@ export function AdminGenerator() {
         setWorkingTitle(payload.data.latestDraft.title);
         setWorkingExcerpt(payload.data.latestDraft.excerpt);
         setWorkingContent(payload.data.latestDraft.content.join("\n\n"));
+        setPreviousSummary(payload.data.latestDraft.excerpt);
       }
 
       if (payload.data.latestDraftChapter) {
@@ -669,7 +675,7 @@ export function AdminGenerator() {
         </section>
       </section>
 
-      <details className="glass rounded-[32px] p-6" open={false}>
+      <details className="glass rounded-[32px] p-6" open={Boolean(draftIdFromUrl)} ref={advancedRef}>
         <summary className="cursor-pointer list-none text-lg font-semibold text-[var(--accent-deep)]">
           打开高级模式
         </summary>

@@ -23,6 +23,10 @@ export type AdminDraftBook = {
   genre: string;
   premise: string;
   tags: string[];
+  latestDraftTitle?: string;
+  latestDraftExcerpt?: string;
+  latestDraftPreview?: string[];
+  latestDraftChapter?: number;
   coverImageUrl?: string;
   coverThumbnailUrl?: string;
   outlineCount: number;
@@ -69,7 +73,7 @@ export const getAdminLibraryOverview = cache(async (): Promise<AdminLibraryOverv
       .select("book_bible_id"),
     supabase
       .from("chapter_drafts")
-      .select("book_bible_id, chapter_number"),
+      .select("book_bible_id, chapter_number, title, excerpt, content"),
     supabase
       .from("release_schedules")
       .select("book_id, release_hour, release_minute, timezone, active"),
@@ -136,6 +140,15 @@ export const getAdminLibraryOverview = cache(async (): Promise<AdminLibraryOverv
   }
 
   const draftCount = new Map<string, number>();
+  const latestDraftByBook = new Map<
+    string,
+    {
+      chapterNumber: number;
+      title: string;
+      excerpt: string;
+      content: string[];
+    }
+  >();
   const maxDraftChapter = new Map<string, number>();
   for (const row of draftsResponse.data ?? []) {
     if (!row.book_bible_id) {
@@ -146,6 +159,20 @@ export const getAdminLibraryOverview = cache(async (): Promise<AdminLibraryOverv
       row.book_bible_id,
       Math.max(maxDraftChapter.get(row.book_bible_id) ?? 0, (row as { chapter_number?: number }).chapter_number ?? 0),
     );
+
+    const current = latestDraftByBook.get(row.book_bible_id);
+    const chapterNumber = (row as { chapter_number?: number }).chapter_number ?? 0;
+
+    if (!current || chapterNumber >= current.chapterNumber) {
+      latestDraftByBook.set(row.book_bible_id, {
+        chapterNumber,
+        title: String((row as { title?: string }).title ?? ""),
+        excerpt: String((row as { excerpt?: string }).excerpt ?? ""),
+        content: Array.isArray((row as { content?: string[] }).content)
+          ? (((row as { content?: string[] }).content as string[]) ?? [])
+          : [],
+      });
+    }
   }
 
   const draftBooks =
@@ -167,6 +194,10 @@ export const getAdminLibraryOverview = cache(async (): Promise<AdminLibraryOverv
         outlineCount: totalOutlines,
         draftCount: draftCount.get(book.id) ?? 0,
         nextChapterNumber,
+        latestDraftTitle: latestDraftByBook.get(book.id)?.title,
+        latestDraftExcerpt: latestDraftByBook.get(book.id)?.excerpt,
+        latestDraftPreview: latestDraftByBook.get(book.id)?.content.slice(0, 2) ?? [],
+        latestDraftChapter: latestDraftByBook.get(book.id)?.chapterNumber,
         ...selectedDraftCovers.get(book.id),
       };
     }) ?? [];

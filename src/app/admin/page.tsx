@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { AdminGenerator } from "@/components/admin/generator";
 
-export default function AdminPage() {
+export default async function AdminPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ bibleId?: string }>;
+}) {
+  const params = await searchParams;
+
   return (
     <main className="pb-16 pt-8 md:pb-24">
       <div className="page-shell">
@@ -27,7 +33,7 @@ export default function AdminPage() {
         </p>
 
         <section className="mt-8">
-          <AdminGenerator />
+          <AdminGenerator initialDraftId={params.bibleId ?? null} />
         </section>
       </div>
     </main>
