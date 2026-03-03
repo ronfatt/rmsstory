@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { hasOpenAIEnv } from "@/lib/openai";
-import { hasSupabaseEnv } from "@/lib/supabase";
+import { hasSupabaseAdminEnv, hasSupabaseEnv } from "@/lib/supabase";
 
 export async function GET() {
   return NextResponse.json({
@@ -8,6 +8,7 @@ export async function GET() {
     timestamp: new Date().toISOString(),
     services: {
       supabase: hasSupabaseEnv(),
+      supabaseAdmin: hasSupabaseAdminEnv(),
       openai: hasOpenAIEnv(),
       adminToken: Boolean(process.env.ADMIN_TOKEN),
     },

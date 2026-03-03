@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { extractJsonObject, isAuthorizedAdminToken, type GeneratedNovelBible } from "@/lib/admin";
 import { getOpenAIClient } from "@/lib/openai";
+import { getSupabaseAdminClient } from "@/lib/supabase";
 
 type GeneratePayload = {
   premise?: string;
@@ -91,7 +92,32 @@ Berikan tepat 4 watak utama dan tepat 12 outline bab.
 
   try {
     const parsed = JSON.parse(extractJsonObject(raw)) as GeneratedNovelBible;
-    return NextResponse.json({ data: parsed });
+    const supabase = getSupabaseAdminClient();
+    let saved = false;
+    let saveError: string | undefined;
+
+    if (supabase) {
+      const { error } = await supabase.from("generation_jobs").insert({
+        job_type: "novel_bible",
+        input_payload: {
+          premise,
+          genre,
+          tone,
+          audience,
+          updateCadence,
+        },
+        output_payload: parsed,
+        status: "completed",
+      });
+
+      if (error) {
+        saveError = error.message;
+      } else {
+        saved = true;
+      }
+    }
+
+    return NextResponse.json({ data: parsed, saved, saveError });
   } catch {
     return NextResponse.json(
       { error: "Failed to parse model response as JSON.", raw },

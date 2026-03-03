@@ -7,6 +7,8 @@ type GenerateState = {
   data?: GeneratedNovelBible;
   error?: string;
   raw?: string;
+  saved?: boolean;
+  saveError?: string;
 };
 
 const initialPremise =
@@ -47,6 +49,8 @@ export function AdminGenerator() {
         data?: GeneratedNovelBible;
         error?: string;
         raw?: string;
+        saved?: boolean;
+        saveError?: string;
       };
 
       if (!response.ok) {
@@ -54,7 +58,7 @@ export function AdminGenerator() {
         return;
       }
 
-      setResult({ data: payload.data });
+      setResult({ data: payload.data, saved: payload.saved, saveError: payload.saveError });
     });
   }
 
@@ -144,6 +148,19 @@ export function AdminGenerator() {
 
         {result.data ? (
           <div className="mt-5 space-y-5">
+            <div
+              className={`rounded-[24px] border p-4 text-sm leading-7 ${
+                result.saved
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                  : "border-amber-200 bg-amber-50 text-amber-900"
+              }`}
+            >
+              {result.saved
+                ? "Hasil ini telah disimpan ke Supabase dalam jadual generation_jobs."
+                : "Hasil berjaya dijana, tetapi belum disimpan ke Supabase."}
+              {result.saveError ? ` Ralat simpan: ${result.saveError}` : null}
+            </div>
+
             <div className="rounded-[24px] border border-[var(--border)] bg-white/80 p-5">
               <h3 className="text-3xl font-semibold text-[var(--accent-deep)]">{result.data.title}</h3>
               <p className="mt-2 text-sm leading-7 text-[var(--muted)]">{result.data.tagline}</p>
