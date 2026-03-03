@@ -23,7 +23,7 @@ export default function AdminPage() {
         </div>
 
         <p className="mt-5 max-w-3xl text-base leading-8 text-[var(--muted)]">
-          这个后台页面给你做整套小说生产流程。界面操作说明用中文，AI 产出的标题、简介、章节、封面提示词仍然保持马来语，方便直接上站。
+          这个后台现在分成两层：上面是“一键生成并发布”的简化模式，适合快速上书；下面是高级模式，保留完整的圣经、大纲、章节和封面精修流程。界面操作说明用中文，AI 产出的标题、简介、章节、封面提示词仍然保持马来语，方便直接上站。
         </p>
 
         <section className="mt-8">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import type {
   GeneratedChapterDraft,
   GeneratedChapterOutline,
@@ -21,8 +21,23 @@ type ResultEnvelope<T> = {
   thumbnailUrl?: string;
 };
 
+type QuickPublishResult = {
+  published?: boolean;
+  bibleId?: string;
+  bookId?: string;
+  slug?: string;
+  title?: string;
+  bible?: GeneratedNovelBible;
+  outline?: GeneratedChapterOutline[];
+  publishedChapterCount?: number;
+  imageUrl?: string;
+  thumbnailUrl?: string;
+  warnings?: string[];
+};
+
 const initialPremise =
   "Seorang wanita miskin yang dihina keluarganya kembali ke bandar asal selepas kematian neneknya, lalu mendapati dia sebenarnya pewaris utama empayar keluarga yang kini cuba dirampas oleh lelaki yang pernah memusnahkan hidupnya.";
+const adminTokenStorageKey = "rmsstory-admin-token";
 
 export function AdminGenerator() {
   const [premise, setPremise] = useState(initialPremise);
@@ -35,7 +50,13 @@ export function AdminGenerator() {
   const [previousSummary, setPreviousSummary] = useState(
     "Watak utama baru kembali ke rumah lama dan menyedari ada wasiat yang disembunyikan.",
   );
-  const [adminToken, setAdminToken] = useState("");
+  const [adminToken, setAdminToken] = useState(() => {
+    if (typeof window === "undefined") {
+      return "";
+    }
+
+    return window.localStorage.getItem(adminTokenStorageKey) ?? "";
+  });
   const [selectedChapter, setSelectedChapter] = useState("1");
   const [bibleResult, setBibleResult] = useState<ResultEnvelope<GeneratedNovelBible>>({});
   const [outlineResult, setOutlineResult] = useState<ResultEnvelope<GeneratedChapterOutline[]>>({});
@@ -63,6 +84,17 @@ export function AdminGenerator() {
   const [isCoverSavePending, startCoverSaveTransition] = useTransition();
   const [isCoverAutoPending, startCoverAutoTransition] = useTransition();
   const [isCoverUploadPending, startCoverUploadTransition] = useTransition();
+  const [quickResult, setQuickResult] = useState<ResultEnvelope<QuickPublishResult>>({});
+  const [isQuickPending, startQuickTransition] = useTransition();
+
+  useEffect(() => {
+    if (adminToken.trim()) {
+      window.localStorage.setItem(adminTokenStorageKey, adminToken);
+      return;
+    }
+
+    window.localStorage.removeItem(adminTokenStorageKey);
+  }, [adminToken]);
 
   async function postJson<T>(url: string, body: Record<string, unknown>) {
     const response = await fetch(url, {
@@ -76,6 +108,58 @@ export function AdminGenerator() {
 
     const payload = (await response.json()) as ResultEnvelope<T>;
     return { response, payload };
+  }
+
+  function handleQuickGenerate() {
+    startQuickTransition(async () => {
+      setQuickResult({});
+
+      const { response, payload } = await postJson<QuickPublishResult>(
+        "/api/admin/quick-generate-publish",
+        {
+          premise,
+          genre,
+          tone,
+          audience,
+          updateCadence,
+          quickDraftChapters: 3,
+          releaseHour: 19,
+          releaseMinute: 0,
+          timezone: "Asia/Kuala_Lumpur",
+          coverDirection,
+        },
+      );
+
+      if (!response.ok) {
+        setQuickResult({ error: payload.error ?? "Request failed.", raw: payload.raw });
+        return;
+      }
+
+      setQuickResult(payload);
+
+      if (payload.data?.bible) {
+        setBibleResult({
+          data: payload.data.bible,
+          saved: true,
+          bibleId: payload.data.bibleId,
+        });
+      }
+
+      if (payload.data?.outline) {
+        setOutlineResult({
+          data: payload.data.outline,
+          saved: true,
+        });
+      }
+
+      if (payload.data?.imageUrl) {
+        setCoverImageUrl(payload.data.imageUrl);
+      }
+
+      if (payload.data?.thumbnailUrl) {
+        setCoverThumbnailUrl(payload.data.thumbnailUrl);
+      }
+    });
   }
 
   function handleBibleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -363,6 +447,142 @@ export function AdminGenerator() {
 
   return (
     <div className="space-y-6">
+      <section className="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
+        <div className="glass rounded-[32px] p-6">
+          <p className="text-xs uppercase tracking-[0.28em] text-[var(--accent)]">简化模式</p>
+          <h2 className="mt-3 text-3xl font-semibold text-[var(--accent-deep)]">快速生成一本书</h2>
+          <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
+            这是你以后最常用的入口。填好核心设定后，系统会一次完成小说圣经、前 3 章、封面和发布，直接把新书送进首页，不需要再手动跳 6 个步骤。
+          </p>
+
+          <label className="mt-6 block text-sm font-semibold text-[var(--accent-deep)]">
+            核心设定 / Premise
+            <textarea
+              value={premise}
+              onChange={(event) => setPremise(event.target.value)}
+              className="mt-2 min-h-36 w-full rounded-[20px] border border-[var(--border)] bg-white/80 px-4 py-3 text-sm font-normal text-[var(--foreground)] outline-none"
+            />
+          </label>
+
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <label className="text-sm font-semibold text-[var(--accent-deep)]">
+              题材方向
+              <input
+                value={genre}
+                onChange={(event) => setGenre(event.target.value)}
+                className="mt-2 w-full rounded-[16px] border border-[var(--border)] bg-white/80 px-4 py-3 text-sm font-normal outline-none"
+              />
+            </label>
+            <label className="text-sm font-semibold text-[var(--accent-deep)]">
+              情绪和风格
+              <input
+                value={tone}
+                onChange={(event) => setTone(event.target.value)}
+                className="mt-2 w-full rounded-[16px] border border-[var(--border)] bg-white/80 px-4 py-3 text-sm font-normal outline-none"
+              />
+            </label>
+            <label className="text-sm font-semibold text-[var(--accent-deep)]">
+              目标读者
+              <input
+                value={audience}
+                onChange={(event) => setAudience(event.target.value)}
+                className="mt-2 w-full rounded-[16px] border border-[var(--border)] bg-white/80 px-4 py-3 text-sm font-normal outline-none"
+              />
+            </label>
+            <label className="text-sm font-semibold text-[var(--accent-deep)]">
+              更新节奏
+              <input
+                value={updateCadence}
+                onChange={(event) => setUpdateCadence(event.target.value)}
+                className="mt-2 w-full rounded-[16px] border border-[var(--border)] bg-white/80 px-4 py-3 text-sm font-normal outline-none"
+              />
+            </label>
+          </div>
+
+          <label className="mt-4 block text-sm font-semibold text-[var(--accent-deep)]">
+            后台口令
+            <input
+              type="password"
+              value={adminToken}
+              onChange={(event) => setAdminToken(event.target.value)}
+              placeholder="输入一次后会自动记住"
+              className="mt-2 w-full rounded-[16px] border border-[var(--border)] bg-white/80 px-4 py-3 text-sm font-normal outline-none"
+            />
+          </label>
+
+          <div className="mt-4 rounded-[20px] border border-[var(--border)] bg-white/60 p-4 text-sm leading-7 text-[var(--muted)]">
+            系统会自动执行：
+            <br />
+            1. 生成小说圣经
+            <br />
+            2. 生成前 3 章正文
+            <br />
+            3. 自动生成并挂载封面
+            <br />
+            4. 直接上架到首页
+          </div>
+
+          <button
+            type="button"
+            disabled={isQuickPending}
+            onClick={handleQuickGenerate}
+            className="mt-6 rounded-full bg-[var(--accent)] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[var(--accent-deep)] disabled:opacity-60"
+          >
+            {isQuickPending ? "正在一键生成并发布..." : "一键生成并发布到首页"}
+          </button>
+        </div>
+
+        <section className="glass rounded-[32px] p-6">
+          <p className="text-xs uppercase tracking-[0.28em] text-[var(--accent)]">快速结果</p>
+          {!quickResult.data && !quickResult.error ? (
+            <div className="mt-5 rounded-[24px] border border-dashed border-[var(--border)] bg-white/50 p-6 text-sm leading-7 text-[var(--muted)]">
+              这里会显示快速上架结果。成功后，你可以直接去首页和书库检查新书是否已经出现。
+            </div>
+          ) : null}
+
+          {quickResult.error ? (
+            <div className="mt-5 rounded-[24px] border border-red-200 bg-red-50 p-5 text-sm leading-7 text-red-800">
+              <p className="font-semibold">错误：{quickResult.error}</p>
+              {quickResult.raw ? (
+                <pre className="mt-4 overflow-x-auto whitespace-pre-wrap text-xs">{quickResult.raw}</pre>
+              ) : null}
+            </div>
+          ) : null}
+
+          {quickResult.data ? (
+            <div className="mt-5 space-y-5">
+              <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 p-5 text-sm leading-7 text-emerald-800">
+                <p className="font-semibold">新书已经生成并发布。</p>
+                <p className="mt-2">书名：{quickResult.data.title}</p>
+                <p>已发布章节：{quickResult.data.publishedChapterCount ?? 0} 章</p>
+                {quickResult.data.slug ? <p>书页地址：/novels/{quickResult.data.slug}</p> : null}
+              </div>
+
+              {quickResult.data.imageUrl ? <InfoCard title="已上架封面 URL" body={quickResult.data.imageUrl} /> : null}
+
+              {quickResult.data.warnings?.length ? (
+                <div className="rounded-[24px] border border-amber-200 bg-amber-50 p-5 text-sm leading-7 text-amber-900">
+                  <p className="font-semibold">已完成，但有提醒：</p>
+                  <div className="mt-3 space-y-2">
+                    {quickResult.data.warnings.map((warning) => (
+                      <p key={warning}>{warning}</p>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </section>
+      </section>
+
+      <details className="glass rounded-[32px] p-6" open={false}>
+        <summary className="cursor-pointer list-none text-lg font-semibold text-[var(--accent-deep)]">
+          打开高级模式
+        </summary>
+        <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--muted)]">
+          只有在你需要精修时再展开这里。高级模式保留小说圣经、大纲、长章节、续写改写和封面替换的完整手动流程。
+        </p>
+        <div className="mt-6 space-y-6">
       <section className="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
         <form onSubmit={handleBibleSubmit} className="glass rounded-[32px] p-6">
           <p className="text-xs uppercase tracking-[0.28em] text-[var(--accent)]">功能区 1</p>
@@ -931,6 +1151,8 @@ export function AdminGenerator() {
           ) : null}
         </section>
       </section>
+        </div>
+      </details>
     </div>
   );
 }
