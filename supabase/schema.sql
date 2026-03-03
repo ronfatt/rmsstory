@@ -49,9 +49,19 @@ create table if not exists public.release_schedules (
   updated_at timestamptz not null default timezone('utc', now())
 );
 
+create table if not exists public.generation_jobs (
+  id uuid primary key default gen_random_uuid(),
+  job_type text not null,
+  input_payload jsonb not null default '{}'::jsonb,
+  output_payload jsonb,
+  status text not null default 'completed',
+  created_at timestamptz not null default timezone('utc', now())
+);
+
 alter table public.books enable row level security;
 alter table public.chapters enable row level security;
 alter table public.release_schedules enable row level security;
+alter table public.generation_jobs enable row level security;
 
 drop policy if exists "Public can read published books" on public.books;
 create policy "Public can read published books"
@@ -67,3 +77,8 @@ drop policy if exists "Public can read release schedules" on public.release_sche
 create policy "Public can read release schedules"
 on public.release_schedules for select
 using (true);
+
+drop policy if exists "No public access to generation jobs" on public.generation_jobs;
+create policy "No public access to generation jobs"
+on public.generation_jobs for select
+using (false);
