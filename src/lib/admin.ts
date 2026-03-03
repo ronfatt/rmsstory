@@ -41,6 +41,15 @@ export type GeneratedChapterDraft = {
   recommendationCopy: string;
 };
 
+export type GeneratedChapterRevision = {
+  mode: "continue" | "rewrite" | "expand";
+  title: string;
+  excerpt: string;
+  content: string[];
+  wordCount: number;
+  editorNote: string;
+};
+
 export function extractJsonObject(raw: string) {
   const fencedMatch = raw.match(/```json\s*([\s\S]*?)```/i);
   const candidate = fencedMatch?.[1] ?? raw;
