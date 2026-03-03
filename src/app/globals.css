@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f7efe5;
+  --foreground: #20130d;
+  --surface: rgba(255, 249, 243, 0.78);
+  --surface-strong: rgba(255, 252, 248, 0.92);
+  --border: rgba(86, 49, 26, 0.12);
+  --accent: #b14d18;
+  --accent-deep: #6d2200;
+  --accent-soft: #ffe2d1;
+  --olive: #394733;
+  --muted: #6f5d53;
+  --shadow: 0 28px 80px rgba(53, 22, 8, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--foreground);
+  background:
+    radial-gradient(circle at top left, rgba(255, 216, 188, 0.9), transparent 28%),
+    radial-gradient(circle at top right, rgba(188, 214, 180, 0.75), transparent 24%),
+    linear-gradient(180deg, #fff7f0 0%, #f7efe5 48%, #efe5da 100%);
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.page-shell {
+  width: min(1180px, calc(100vw - 32px));
+  margin: 0 auto;
+}
+
+.glass {
+  background: var(--surface);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.grain::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08)),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140' viewBox='0 0 140 140'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%236d2200' fill-opacity='0.04'%3E%3Cpath d='M0 0h1v1H0zm35 35h1v1h-1zm42 16h1v1h-1zm17 54h1v1h-1zm31-73h1v1h-1zm-94 66h1v1h-1zm22-76h1v1h-1zm50 93h1v1h-1z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.cover-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.cover-card::after {
+  content: "";
+  position: absolute;
+  inset: auto -10% -18% auto;
+  width: 180px;
+  height: 180px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(255, 239, 211, 0.55), transparent 66%);
+}
+
+.reading-content p {
+  margin: 0 0 1.2rem;
+  line-height: 1.95;
+  font-size: 1.06rem;
+  color: rgba(32, 19, 13, 0.92);
+}
