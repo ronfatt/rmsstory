@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import type {
   GeneratedChapterDraft,
   GeneratedChapterOutline,
@@ -35,11 +35,26 @@ type QuickPublishResult = {
   warnings?: string[];
 };
 
+type LoadedDraftPayload = {
+  bibleId: string;
+  premise: string;
+  genre: string;
+  bible: GeneratedNovelBible;
+  outlines: GeneratedChapterOutline[];
+  latestDraft: GeneratedChapterDraft | null;
+  latestDraftChapter: number | null;
+  coverImageUrl: string | null;
+  coverThumbnailUrl: string | null;
+};
+
 const initialPremise =
   "Seorang wanita miskin yang dihina keluarganya kembali ke bandar asal selepas kematian neneknya, lalu mendapati dia sebenarnya pewaris utama empayar keluarga yang kini cuba dirampas oleh lelaki yang pernah memusnahkan hidupnya.";
 const adminTokenStorageKey = "rmsstory-admin-token";
 
 export function AdminGenerator() {
+  const draftIdFromUrl =
+    typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("bibleId");
+  const loadedDraftRef = useRef<string | null>(null);
   const [premise, setPremise] = useState(initialPremise);
   const [genre, setGenre] = useState("Romansa Drama / Warisan / Balas Dendam");
   const [tone, setTone] = useState("emosi tinggi, dramatik, ketagihan, cliffhanger keras");
@@ -86,6 +101,7 @@ export function AdminGenerator() {
   const [isCoverUploadPending, startCoverUploadTransition] = useTransition();
   const [quickResult, setQuickResult] = useState<ResultEnvelope<QuickPublishResult>>({});
   const [isQuickPending, startQuickTransition] = useTransition();
+  const [loadDraftError, setLoadDraftError] = useState("");
 
   useEffect(() => {
     if (adminToken.trim()) {
@@ -95,6 +111,72 @@ export function AdminGenerator() {
 
     window.localStorage.removeItem(adminTokenStorageKey);
   }, [adminToken]);
+
+  useEffect(() => {
+    if (!draftIdFromUrl || !adminToken || loadedDraftRef.current === draftIdFromUrl) {
+      return;
+    }
+
+    const draftId = draftIdFromUrl;
+    let cancelled = false;
+
+    async function loadDraft() {
+      setLoadDraftError("");
+
+      const response = await fetch(`/api/admin/load-draft?bibleId=${encodeURIComponent(draftId)}`, {
+        headers: {
+          "x-admin-token": adminToken,
+        },
+      });
+
+      const payload = (await response.json()) as ResultEnvelope<LoadedDraftPayload>;
+
+      if (cancelled) {
+        return;
+      }
+
+      if (!response.ok || !payload.data) {
+        setLoadDraftError(payload.error ?? "草稿加载失败。");
+        return;
+      }
+
+      loadedDraftRef.current = draftId;
+      setPremise(payload.data.premise);
+      setGenre(payload.data.genre);
+      setBibleResult({
+        data: payload.data.bible,
+        saved: true,
+        bibleId: payload.data.bibleId,
+      });
+      setOutlineResult({
+        data: payload.data.outlines,
+        saved: true,
+      });
+
+      if (payload.data.latestDraft) {
+        setDraftResult({
+          data: payload.data.latestDraft,
+          saved: true,
+        });
+        setWorkingTitle(payload.data.latestDraft.title);
+        setWorkingExcerpt(payload.data.latestDraft.excerpt);
+        setWorkingContent(payload.data.latestDraft.content.join("\n\n"));
+      }
+
+      if (payload.data.latestDraftChapter) {
+        setSelectedChapter(String(payload.data.latestDraftChapter));
+      }
+
+      setCoverImageUrl(payload.data.coverImageUrl ?? "");
+      setCoverThumbnailUrl(payload.data.coverThumbnailUrl ?? "");
+    }
+
+    void loadDraft();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [adminToken, draftIdFromUrl]);
 
   async function postJson<T>(url: string, body: Record<string, unknown>) {
     const response = await fetch(url, {
@@ -447,6 +529,18 @@ export function AdminGenerator() {
 
   return (
     <div className="space-y-6">
+      {loadDraftError ? (
+        <div className="rounded-[24px] border border-red-200 bg-red-50 p-5 text-sm leading-7 text-red-800">
+          草稿载入失败：{loadDraftError}
+        </div>
+      ) : null}
+
+      {draftIdFromUrl && bibleResult.bibleId === draftIdFromUrl ? (
+        <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 p-5 text-sm leading-7 text-emerald-800">
+          已载入草稿《{bibleResult.data?.title ?? "未命名草稿"}》。你现在可以继续生成大纲、补写新章节、续写或改写。
+        </div>
+      ) : null}
+
       <section className="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
         <div className="glass rounded-[32px] p-6">
           <p className="text-xs uppercase tracking-[0.28em] text-[var(--accent)]">简化模式</p>

@@ -1,9 +1,11 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { CoverArt } from "@/components/novels/cover-art";
 import type { AdminDraftBook, AdminPublishedBook } from "@/lib/admin-library";
+
+const adminTokenStorageKey = "rmsstory-admin-token";
 
 type LibraryManagerProps = {
   publishedBooks: AdminPublishedBook[];
@@ -11,7 +13,13 @@ type LibraryManagerProps = {
 };
 
 export function LibraryManager({ publishedBooks, draftBooks }: LibraryManagerProps) {
-  const [adminToken, setAdminToken] = useState("");
+  const [adminToken, setAdminToken] = useState(() => {
+    if (typeof window === "undefined") {
+      return "";
+    }
+
+    return window.localStorage.getItem(adminTokenStorageKey) ?? "";
+  });
   const [query, setQuery] = useState("");
   const [genreFilter, setGenreFilter] = useState("all");
   const [view, setView] = useState<"all" | "published" | "drafts">("all");
@@ -20,6 +28,15 @@ export function LibraryManager({ publishedBooks, draftBooks }: LibraryManagerPro
   const [releaseHour, setReleaseHour] = useState("19");
   const [releaseMinute, setReleaseMinute] = useState("0");
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    if (adminToken.trim()) {
+      window.localStorage.setItem(adminTokenStorageKey, adminToken);
+      return;
+    }
+
+    window.localStorage.removeItem(adminTokenStorageKey);
+  }, [adminToken]);
 
   const genres = useMemo(() => {
     const allGenres = [...publishedBooks.map((book) => book.genre), ...draftBooks.map((book) => book.genre)];
@@ -153,6 +170,9 @@ export function LibraryManager({ publishedBooks, draftBooks }: LibraryManagerPro
             立即执行一次定时发布
           </button>
         </div>
+        {!adminToken ? (
+          <p className="mt-4 text-sm text-[var(--muted)]">先输入后台口令，发布、删除、归档这些按钮才会生效。</p>
+        ) : null}
         {feedback ? <p className="mt-4 text-sm text-[var(--accent-deep)]">{feedback}</p> : null}
       </section>
 
@@ -259,6 +279,12 @@ export function LibraryManager({ publishedBooks, draftBooks }: LibraryManagerPro
                       创建于 {new Date(book.createdAt).toLocaleDateString("ms-MY")}
                     </p>
                     <div className="mt-5 flex flex-wrap gap-3">
+                      <Link
+                        href={`/admin?bibleId=${book.id}`}
+                        className="rounded-full border border-[var(--border)] bg-white/80 px-5 py-3 text-sm font-semibold text-[var(--foreground)]"
+                      >
+                        继续生成
+                      </Link>
                       <button
                         type="button"
                         disabled={isPending || !adminToken}
