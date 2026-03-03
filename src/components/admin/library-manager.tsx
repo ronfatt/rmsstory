@@ -77,7 +77,7 @@ export function LibraryManager({ publishedBooks, draftBooks }: LibraryManagerPro
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Cari tajuk, genre, premis"
+            placeholder="搜索书名、题材、剧情设定"
             className="rounded-[16px] border border-[var(--border)] bg-white/80 px-4 py-3 text-sm outline-none"
           />
           <select
@@ -87,7 +87,7 @@ export function LibraryManager({ publishedBooks, draftBooks }: LibraryManagerPro
           >
             {genres.map((genre) => (
               <option key={genre} value={genre}>
-                {genre === "all" ? "Semua genre" : genre}
+                {genre === "all" ? "全部题材" : genre}
               </option>
             ))}
           </select>
@@ -96,15 +96,15 @@ export function LibraryManager({ publishedBooks, draftBooks }: LibraryManagerPro
             onChange={(event) => setView(event.target.value as "all" | "published" | "drafts")}
             className="rounded-[16px] border border-[var(--border)] bg-white/80 px-4 py-3 text-sm outline-none"
           >
-            <option value="all">Semua</option>
+            <option value="all">全部状态</option>
             <option value="published">已上架</option>
-            <option value="drafts">草稿</option>
+            <option value="drafts">草稿箱</option>
           </select>
           <input
             type="password"
             value={adminToken}
             onChange={(event) => setAdminToken(event.target.value)}
-            placeholder="Admin token untuk tindakan"
+            placeholder="输入后台口令后才能执行操作"
             className="rounded-[16px] border border-[var(--border)] bg-white/80 px-4 py-3 text-sm outline-none"
           />
         </div>
@@ -116,9 +116,9 @@ export function LibraryManager({ publishedBooks, draftBooks }: LibraryManagerPro
           <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.28em] text-[var(--accent)]">已生成书籍</p>
-              <h2 className="mt-3 text-3xl font-semibold text-[var(--accent-deep)]">Koleksi yang sudah terbit</h2>
+              <h2 className="mt-3 text-3xl font-semibold text-[var(--accent-deep)]">已上架作品</h2>
             </div>
-            <p className="text-sm leading-7 text-[var(--muted)]">{filteredPublished.length} hasil carian</p>
+            <p className="text-sm leading-7 text-[var(--muted)]">当前结果 {filteredPublished.length} 本</p>
           </div>
           <div className="mt-6 grid gap-6 lg:grid-cols-3">
             {filteredPublished.map((book) => (
@@ -134,7 +134,7 @@ export function LibraryManager({ publishedBooks, draftBooks }: LibraryManagerPro
                   taglineClassName="max-w-[13rem] text-sm"
                 />
                 <div className="mt-5 space-y-2 text-sm text-[var(--muted)]">
-                  <p>{book.chapterCount} bab terbit</p>
+                  <p>已发布 {book.chapterCount} 章</p>
                   <p>{book.status}</p>
                   <p>{book.publishedAt ? new Date(book.publishedAt).toLocaleDateString("ms-MY") : ""}</p>
                 </div>
@@ -143,7 +143,13 @@ export function LibraryManager({ publishedBooks, draftBooks }: LibraryManagerPro
                     href={`/novels/${book.slug}`}
                     className="text-sm font-semibold text-[var(--accent-deep)] underline underline-offset-4"
                   >
-                    Buka halaman buku
+                    打开前台书页
+                  </Link>
+                  <Link
+                    href={`/admin/library/${book.id}`}
+                    className="text-sm font-semibold text-[var(--accent-deep)] underline underline-offset-4"
+                  >
+                    编辑资料
                   </Link>
                   <button
                     type="button"
@@ -152,12 +158,12 @@ export function LibraryManager({ publishedBooks, draftBooks }: LibraryManagerPro
                       runAction(
                         "/api/admin/archive-book",
                         { bookId: book.id },
-                        `Buku "${book.title}" telah diarkibkan.`,
+                        `《${book.title}》已归档。`,
                       )
                     }
                     className="text-sm font-semibold text-[var(--foreground)] underline underline-offset-4 disabled:opacity-60"
                   >
-                    Arkibkan
+                    归档下架
                   </button>
                 </div>
               </article>
@@ -171,9 +177,9 @@ export function LibraryManager({ publishedBooks, draftBooks }: LibraryManagerPro
           <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.28em] text-[var(--accent)]">草稿书籍</p>
-              <h2 className="mt-3 text-3xl font-semibold text-[var(--accent-deep)]">Draft yang sedia untuk dipublish</h2>
+              <h2 className="mt-3 text-3xl font-semibold text-[var(--accent-deep)]">待发布草稿</h2>
             </div>
-            <p className="text-sm leading-7 text-[var(--muted)]">{filteredDrafts.length} hasil carian</p>
+            <p className="text-sm leading-7 text-[var(--muted)]">当前结果 {filteredDrafts.length} 本</p>
           </div>
           <div className="mt-6 grid gap-6 lg:grid-cols-2">
             {filteredDrafts.map((book) => (
@@ -193,12 +199,12 @@ export function LibraryManager({ publishedBooks, draftBooks }: LibraryManagerPro
                     <h3 className="text-2xl font-semibold text-[var(--accent-deep)]">{book.title}</h3>
                     <p className="mt-3 text-sm leading-7 text-[var(--muted)]">{book.premise}</p>
                     <div className="mt-5 grid gap-3 md:grid-cols-3">
-                      <StatCard label="Genre" value={book.genre} />
-                      <StatCard label="Outline" value={`${book.outlineCount} bab`} />
-                      <StatCard label="Draft" value={`${book.draftCount} versi`} />
+                      <StatCard label="题材" value={book.genre} />
+                      <StatCard label="大纲" value={`${book.outlineCount} 章`} />
+                      <StatCard label="草稿" value={`${book.draftCount} 份`} />
                     </div>
                     <p className="mt-5 text-sm text-[var(--muted)]">
-                      Dijana pada {new Date(book.createdAt).toLocaleDateString("ms-MY")}
+                      创建于 {new Date(book.createdAt).toLocaleDateString("ms-MY")}
                     </p>
                     <div className="mt-5 flex flex-wrap gap-3">
                       <button
@@ -208,12 +214,12 @@ export function LibraryManager({ publishedBooks, draftBooks }: LibraryManagerPro
                           runAction(
                             "/api/admin/publish-draft",
                             { bibleId: book.id },
-                            `Draft "${book.title}" telah dipublish.`,
+                            `《${book.title}》已发布到正式书库。`,
                           )
                         }
                         className="rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
                       >
-                        Publish ke books
+                        一键发布
                       </button>
                       <button
                         type="button"
@@ -222,12 +228,12 @@ export function LibraryManager({ publishedBooks, draftBooks }: LibraryManagerPro
                           runAction(
                             "/api/admin/delete-draft",
                             { bibleId: book.id },
-                            `Draft "${book.title}" telah dipadam.`,
+                            `《${book.title}》草稿已删除。`,
                           )
                         }
                         className="rounded-full border border-[var(--border)] bg-white/80 px-5 py-3 text-sm font-semibold text-[var(--foreground)] disabled:opacity-60"
                       >
-                        Padam draft
+                        删除草稿
                       </button>
                     </div>
                   </div>

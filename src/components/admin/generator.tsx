@@ -365,11 +365,14 @@ export function AdminGenerator() {
     <div className="space-y-6">
       <section className="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
         <form onSubmit={handleBibleSubmit} className="glass rounded-[32px] p-6">
-          <p className="text-xs uppercase tracking-[0.28em] text-[var(--accent)]">Langkah 1</p>
-          <h2 className="mt-3 text-3xl font-semibold text-[var(--accent-deep)]">Jana novel bible</h2>
+          <p className="text-xs uppercase tracking-[0.28em] text-[var(--accent)]">功能区 1</p>
+          <h2 className="mt-3 text-3xl font-semibold text-[var(--accent-deep)]">小说圣经生成器</h2>
+          <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
+            用这一块先确定一本书的核心卖点。输入题材、情绪、受众和核心设定后，系统会生成马来语标题、简介、标签、人物设定、SEO 文案和封面提示词。
+          </p>
 
           <label className="mt-6 block text-sm font-semibold text-[var(--accent-deep)]">
-            Premis utama
+            核心设定 / Premise
             <textarea
               value={premise}
               onChange={(event) => setPremise(event.target.value)}
@@ -379,7 +382,7 @@ export function AdminGenerator() {
 
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <label className="text-sm font-semibold text-[var(--accent-deep)]">
-              Genre
+              题材方向
               <input
                 value={genre}
                 onChange={(event) => setGenre(event.target.value)}
@@ -387,7 +390,7 @@ export function AdminGenerator() {
               />
             </label>
             <label className="text-sm font-semibold text-[var(--accent-deep)]">
-              Nada
+              情绪和风格
               <input
                 value={tone}
                 onChange={(event) => setTone(event.target.value)}
@@ -395,7 +398,7 @@ export function AdminGenerator() {
               />
             </label>
             <label className="text-sm font-semibold text-[var(--accent-deep)]">
-              Audiens
+              目标读者
               <input
                 value={audience}
                 onChange={(event) => setAudience(event.target.value)}
@@ -403,7 +406,7 @@ export function AdminGenerator() {
               />
             </label>
             <label className="text-sm font-semibold text-[var(--accent-deep)]">
-              Kadar kemas kini
+              更新节奏
               <input
                 value={updateCadence}
                 onChange={(event) => setUpdateCadence(event.target.value)}
@@ -413,7 +416,7 @@ export function AdminGenerator() {
           </div>
 
           <label className="mt-4 block text-sm font-semibold text-[var(--accent-deep)]">
-            Admin token
+            后台口令
             <input
               type="password"
               value={adminToken}
@@ -427,21 +430,21 @@ export function AdminGenerator() {
             disabled={isBiblePending}
             className="mt-6 rounded-full bg-[var(--accent)] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[var(--accent-deep)] disabled:opacity-60"
           >
-            {isBiblePending ? "Menjana..." : "Jana novel bible"}
+            {isBiblePending ? "生成中..." : "生成小说圣经"}
           </button>
         </form>
 
         <section className="glass rounded-[32px] p-6">
-          <p className="text-xs uppercase tracking-[0.28em] text-[var(--accent)]">Output bible</p>
+          <p className="text-xs uppercase tracking-[0.28em] text-[var(--accent)]">输出结果</p>
           {!bibleResult.data && !bibleResult.error ? (
             <div className="mt-5 rounded-[24px] border border-dashed border-[var(--border)] bg-white/50 p-6 text-sm leading-7 text-[var(--muted)]">
-              Jana title, synopsis, hook, world summary, watak utama, SEO copy, dan prompt sampul dahulu.
+              这里会显示生成后的马来语标题、简介、剧情钩子、角色设定、SEO 文案和封面提示词。先把这一步打磨满意，再继续往下生成。
             </div>
           ) : null}
 
           {bibleResult.error ? (
             <div className="mt-5 rounded-[24px] border border-red-200 bg-red-50 p-5 text-sm leading-7 text-red-800">
-              <p className="font-semibold">Ralat: {bibleResult.error}</p>
+              <p className="font-semibold">错误：{bibleResult.error}</p>
               {bibleResult.raw ? (
                 <pre className="mt-4 overflow-x-auto whitespace-pre-wrap text-xs">{bibleResult.raw}</pre>
               ) : null}
@@ -458,19 +461,19 @@ export function AdminGenerator() {
                 <p className="mt-4 text-sm leading-7 text-[var(--foreground)]">{bibleResult.data.synopsis}</p>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <InfoCard title="Hook" body={bibleResult.data.hook} />
-                <InfoCard title="Audiens" body={bibleResult.data.audience} />
+                <div className="grid gap-4 md:grid-cols-2">
+                <InfoCard title="剧情钩子" body={bibleResult.data.hook} />
+                <InfoCard title="目标读者" body={bibleResult.data.audience} />
                 <InfoCard title="SEO title" body={bibleResult.data.seoTitle} />
                 <InfoCard title="SEO description" body={bibleResult.data.seoDescription} />
               </div>
 
-              <InfoCard title="Cadangan promosi" body={bibleResult.data.recommendationCopy} />
-              <InfoCard title="Prompt sampul" body={bibleResult.data.coverPrompt} />
-              <InfoCard title="Dunia cerita" body={bibleResult.data.worldSummary} />
+              <InfoCard title="推荐文案" body={bibleResult.data.recommendationCopy} />
+              <InfoCard title="封面提示词" body={bibleResult.data.coverPrompt} />
+              <InfoCard title="世界观摘要" body={bibleResult.data.worldSummary} />
 
               <div className="rounded-[24px] border border-[var(--border)] bg-white/80 p-5">
-                <p className="text-xs uppercase tracking-[0.24em] text-[var(--muted)]">Tag</p>
+                <p className="text-xs uppercase tracking-[0.24em] text-[var(--muted)]">标签</p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   {bibleResult.data.tags.map((tag) => (
                     <span
@@ -484,7 +487,7 @@ export function AdminGenerator() {
               </div>
 
               <div className="rounded-[24px] border border-[var(--border)] bg-white/80 p-5">
-                <p className="text-xs uppercase tracking-[0.24em] text-[var(--muted)]">Watak utama</p>
+                <p className="text-xs uppercase tracking-[0.24em] text-[var(--muted)]">主要角色</p>
                 <div className="mt-4 grid gap-4 md:grid-cols-2">
                   {bibleResult.data.mainCharacters.map((character) => (
                     <div key={character.name} className="rounded-[18px] border border-[var(--border)] bg-[var(--surface)] p-4">
@@ -502,11 +505,14 @@ export function AdminGenerator() {
 
       <section className="grid gap-6 xl:grid-cols-[0.85fr_1.15fr]">
         <div className="glass rounded-[32px] p-6">
-          <p className="text-xs uppercase tracking-[0.28em] text-[var(--accent)]">Langkah 2</p>
-          <h2 className="mt-3 text-3xl font-semibold text-[var(--accent-deep)]">Jana outline bab panjang</h2>
+          <p className="text-xs uppercase tracking-[0.28em] text-[var(--accent)]">功能区 2</p>
+          <h2 className="mt-3 text-3xl font-semibold text-[var(--accent-deep)]">章节大纲生成器</h2>
+          <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
+            这一块负责把小说圣经扩成整本书的大纲。你可以控制章节总数和单章目标长度，先看整本书节奏够不够爽，再决定是否生成正文。
+          </p>
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             <label className="text-sm font-semibold text-[var(--accent-deep)]">
-              Jumlah bab
+              章节总数
               <input
                 value={totalChapters}
                 onChange={(event) => setTotalChapters(event.target.value)}
@@ -514,7 +520,7 @@ export function AdminGenerator() {
               />
             </label>
             <label className="text-sm font-semibold text-[var(--accent-deep)]">
-              Sasaran panjang
+              单章目标长度
               <input
                 value={chapterLengthGoal}
                 onChange={(event) => setChapterLengthGoal(event.target.value)}
@@ -529,15 +535,15 @@ export function AdminGenerator() {
             onClick={handleOutlineGenerate}
             className="mt-6 rounded-full bg-[var(--olive)] px-6 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
           >
-            {isOutlinePending ? "Menjana..." : "Jana outline bab"}
+            {isOutlinePending ? "生成中..." : "生成章节大纲"}
           </button>
         </div>
 
         <section className="glass rounded-[32px] p-6">
-          <p className="text-xs uppercase tracking-[0.28em] text-[var(--accent)]">Output outline</p>
+          <p className="text-xs uppercase tracking-[0.28em] text-[var(--accent)]">输出结果</p>
           {outlineResult.error ? (
             <div className="mt-5 rounded-[24px] border border-red-200 bg-red-50 p-5 text-sm leading-7 text-red-800">
-              <p className="font-semibold">Ralat: {outlineResult.error}</p>
+              <p className="font-semibold">错误：{outlineResult.error}</p>
               {outlineResult.raw ? (
                 <pre className="mt-4 overflow-x-auto whitespace-pre-wrap text-xs">{outlineResult.raw}</pre>
               ) : null}
@@ -547,6 +553,7 @@ export function AdminGenerator() {
           {!outlineResult.data && !outlineResult.error ? (
             <div className="mt-5 rounded-[24px] border border-dashed border-[var(--border)] bg-white/50 p-6 text-sm leading-7 text-[var(--muted)]">
               Selepas novel bible siap, jana outline 20 hingga 60 bab dengan beats yang cukup untuk bab web novel yang panjang.
+              
             </div>
           ) : null}
 
@@ -580,11 +587,14 @@ export function AdminGenerator() {
 
       <section className="grid gap-6 xl:grid-cols-[0.85fr_1.15fr]">
         <div className="glass rounded-[32px] p-6">
-          <p className="text-xs uppercase tracking-[0.28em] text-[var(--accent)]">Langkah 3</p>
-          <h2 className="mt-3 text-3xl font-semibold text-[var(--accent-deep)]">Jana bab super panjang</h2>
+          <p className="text-xs uppercase tracking-[0.28em] text-[var(--accent)]">功能区 3</p>
+          <h2 className="mt-3 text-3xl font-semibold text-[var(--accent-deep)]">长章节正文生成器</h2>
+          <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
+            这里是把某一章大纲直接写成长篇正文。适合先出初稿，再交给下一个区块做续写、改写或扩写。
+          </p>
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             <label className="text-sm font-semibold text-[var(--accent-deep)]">
-              Pilih bab
+              选择章节
               <select
                 value={selectedChapter}
                 onChange={(event) => setSelectedChapter(event.target.value)}
@@ -598,7 +608,7 @@ export function AdminGenerator() {
               </select>
             </label>
             <label className="text-sm font-semibold text-[var(--accent-deep)]">
-              Sasaran panjang
+              目标字数方向
               <input
                 value={chapterLengthGoal}
                 onChange={(event) => setChapterLengthGoal(event.target.value)}
@@ -608,7 +618,7 @@ export function AdminGenerator() {
           </div>
 
           <label className="mt-4 block text-sm font-semibold text-[var(--accent-deep)]">
-            Ringkasan bab sebelumnya
+            前情提要
             <textarea
               value={previousSummary}
               onChange={(event) => setPreviousSummary(event.target.value)}
@@ -622,15 +632,15 @@ export function AdminGenerator() {
             onClick={handleDraftGenerate}
             className="mt-6 rounded-full bg-[var(--accent)] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[var(--accent-deep)] disabled:opacity-60"
           >
-            {isDraftPending ? "Menjana..." : "Jana bab penuh"}
+            {isDraftPending ? "生成中..." : "生成长章节正文"}
           </button>
         </div>
 
         <section className="glass rounded-[32px] p-6">
-          <p className="text-xs uppercase tracking-[0.28em] text-[var(--accent)]">Output bab</p>
+          <p className="text-xs uppercase tracking-[0.28em] text-[var(--accent)]">输出结果</p>
           {draftResult.error ? (
             <div className="mt-5 rounded-[24px] border border-red-200 bg-red-50 p-5 text-sm leading-7 text-red-800">
-              <p className="font-semibold">Ralat: {draftResult.error}</p>
+              <p className="font-semibold">错误：{draftResult.error}</p>
               {draftResult.raw ? (
                 <pre className="mt-4 overflow-x-auto whitespace-pre-wrap text-xs">{draftResult.raw}</pre>
               ) : null}
@@ -650,7 +660,7 @@ export function AdminGenerator() {
                 <h3 className="text-3xl font-semibold text-[var(--accent-deep)]">{draftResult.data.title}</h3>
                 <p className="mt-2 text-sm leading-7 text-[var(--muted)]">{draftResult.data.excerpt}</p>
                 <p className="mt-3 text-sm font-semibold text-[var(--accent-deep)]">
-                  Anggaran panjang: {draftResult.data.wordCount} patah perkataan
+                  预计长度：{draftResult.data.wordCount} 个词
                 </p>
               </div>
 
@@ -658,10 +668,10 @@ export function AdminGenerator() {
                 <InfoCard title="SEO title" body={draftResult.data.seoTitle} />
                 <InfoCard title="SEO description" body={draftResult.data.seoDescription} />
               </div>
-              <InfoCard title="Cadangan promosi" body={draftResult.data.recommendationCopy} />
+              <InfoCard title="推荐文案" body={draftResult.data.recommendationCopy} />
 
               <div className="rounded-[24px] border border-[var(--border)] bg-white/80 p-5">
-                <p className="text-xs uppercase tracking-[0.24em] text-[var(--muted)]">Perenggan bab</p>
+                <p className="text-xs uppercase tracking-[0.24em] text-[var(--muted)]">章节段落</p>
                 <div className="mt-4 space-y-4">
                   {draftResult.data.content.map((paragraph, index) => (
                     <p key={`${index + 1}-${paragraph.slice(0, 24)}`} className="text-sm leading-8 text-[var(--foreground)]">
@@ -677,11 +687,14 @@ export function AdminGenerator() {
 
       <section className="grid gap-6 xl:grid-cols-[0.85fr_1.15fr]">
         <div className="glass rounded-[32px] p-6">
-          <p className="text-xs uppercase tracking-[0.28em] text-[var(--accent)]">Langkah 4</p>
+          <p className="text-xs uppercase tracking-[0.28em] text-[var(--accent)]">功能区 4</p>
           <h2 className="mt-3 text-3xl font-semibold text-[var(--accent-deep)]">续写 / 改写 / 扩写</h2>
+          <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
+            这个区块用来加工长章节初稿。续写是往后接，改写是提升质量，扩写是把章节拉长、补戏、补情绪。
+          </p>
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             <label className="text-sm font-semibold text-[var(--accent-deep)]">
-              Mod
+              编辑模式
               <select
                 value={revisionMode}
                 onChange={(event) =>
@@ -689,13 +702,13 @@ export function AdminGenerator() {
                 }
                 className="mt-2 w-full rounded-[16px] border border-[var(--border)] bg-white/80 px-4 py-3 text-sm font-normal outline-none"
               >
-                <option value="continue">Sambung bab</option>
-                <option value="rewrite">Tulis semula</option>
-                <option value="expand">Panjangkan bab</option>
+                <option value="continue">续写</option>
+                <option value="rewrite">改写</option>
+                <option value="expand">扩写</option>
               </select>
             </label>
             <label className="text-sm font-semibold text-[var(--accent-deep)]">
-              Tajuk bab kerja
+              当前章节标题
               <input
                 value={workingTitle}
                 onChange={(event) => setWorkingTitle(event.target.value)}
@@ -705,7 +718,7 @@ export function AdminGenerator() {
           </div>
 
           <label className="mt-4 block text-sm font-semibold text-[var(--accent-deep)]">
-            Excerpt kerja
+            当前摘要
             <textarea
               value={workingExcerpt}
               onChange={(event) => setWorkingExcerpt(event.target.value)}
@@ -714,7 +727,7 @@ export function AdminGenerator() {
           </label>
 
           <label className="mt-4 block text-sm font-semibold text-[var(--accent-deep)]">
-            Arahan editorial
+            编辑指令
             <textarea
               value={revisionInstruction}
               onChange={(event) => setRevisionInstruction(event.target.value)}
@@ -723,7 +736,7 @@ export function AdminGenerator() {
           </label>
 
           <label className="mt-4 block text-sm font-semibold text-[var(--accent-deep)]">
-            Teks kerja
+            当前正文
             <textarea
               value={workingContent}
               onChange={(event) => setWorkingContent(event.target.value)}
@@ -737,15 +750,15 @@ export function AdminGenerator() {
             onClick={handleRevisionGenerate}
             className="mt-6 rounded-full bg-[var(--olive)] px-6 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
           >
-            {isRevisionPending ? "Memproses..." : "Jalankan editor"}
+            {isRevisionPending ? "处理中..." : "执行编辑"}
           </button>
         </div>
 
         <section className="glass rounded-[32px] p-6">
-          <p className="text-xs uppercase tracking-[0.28em] text-[var(--accent)]">Output editor</p>
+          <p className="text-xs uppercase tracking-[0.28em] text-[var(--accent)]">输出结果</p>
           {revisionResult.error ? (
             <div className="mt-5 rounded-[24px] border border-red-200 bg-red-50 p-5 text-sm leading-7 text-red-800">
-              <p className="font-semibold">Ralat: {revisionResult.error}</p>
+              <p className="font-semibold">错误：{revisionResult.error}</p>
               {revisionResult.raw ? (
                 <pre className="mt-4 overflow-x-auto whitespace-pre-wrap text-xs">{revisionResult.raw}</pre>
               ) : null}
@@ -765,14 +778,14 @@ export function AdminGenerator() {
                 <h3 className="text-3xl font-semibold text-[var(--accent-deep)]">{revisionResult.data.title}</h3>
                 <p className="mt-2 text-sm leading-7 text-[var(--muted)]">{revisionResult.data.excerpt}</p>
                 <p className="mt-3 text-sm font-semibold text-[var(--accent-deep)]">
-                  Anggaran panjang: {revisionResult.data.wordCount} patah perkataan
+                  预计长度：{revisionResult.data.wordCount} 个词
                 </p>
               </div>
 
-              <InfoCard title="Nota editor" body={revisionResult.data.editorNote} />
+              <InfoCard title="编辑备注" body={revisionResult.data.editorNote} />
 
               <div className="rounded-[24px] border border-[var(--border)] bg-white/80 p-5">
-                <p className="text-xs uppercase tracking-[0.24em] text-[var(--muted)]">Perenggan hasil</p>
+                <p className="text-xs uppercase tracking-[0.24em] text-[var(--muted)]">编辑后正文</p>
                 <div className="mt-4 space-y-4">
                   {revisionResult.data.content.map((paragraph, index) => (
                     <p key={`${index + 1}-${paragraph.slice(0, 24)}`} className="text-sm leading-8 text-[var(--foreground)]">
@@ -788,11 +801,14 @@ export function AdminGenerator() {
 
       <section className="grid gap-6 xl:grid-cols-[0.85fr_1.15fr]">
         <div className="glass rounded-[32px] p-6">
-          <p className="text-xs uppercase tracking-[0.28em] text-[var(--accent)]">Langkah 5</p>
-          <h2 className="mt-3 text-3xl font-semibold text-[var(--accent-deep)]">Konsep dan aset sampul</h2>
+          <p className="text-xs uppercase tracking-[0.28em] text-[var(--accent)]">功能区 5</p>
+          <h2 className="mt-3 text-3xl font-semibold text-[var(--accent-deep)]">封面生成与替换</h2>
+          <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
+            这里负责整本书的封面。你可以先只生成封面提示词，也可以直接自动生成图片并上架；如果之后不满意，还可以手动上传替换。
+          </p>
 
           <label className="mt-6 block text-sm font-semibold text-[var(--accent-deep)]">
-            Arah visual
+            封面视觉方向
             <textarea
               value={coverDirection}
               onChange={(event) => setCoverDirection(event.target.value)}
@@ -802,7 +818,7 @@ export function AdminGenerator() {
 
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <label className="text-sm font-semibold text-[var(--accent-deep)]">
-              URL imej utama
+              主图 URL
               <input
                 value={coverImageUrl}
                 onChange={(event) => setCoverImageUrl(event.target.value)}
@@ -811,7 +827,7 @@ export function AdminGenerator() {
               />
             </label>
             <label className="text-sm font-semibold text-[var(--accent-deep)]">
-              URL thumbnail
+              缩略图 URL
               <input
                 value={coverThumbnailUrl}
                 onChange={(event) => setCoverThumbnailUrl(event.target.value)}
@@ -827,7 +843,7 @@ export function AdminGenerator() {
             onClick={handleCoverGenerate}
             className="mt-6 rounded-full bg-[var(--accent)] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[var(--accent-deep)] disabled:opacity-60"
           >
-            {isCoverPending ? "Menjana..." : "Jana konsep sampul"}
+            {isCoverPending ? "生成中..." : "只生成封面提示词"}
           </button>
 
           <button
@@ -836,19 +852,19 @@ export function AdminGenerator() {
             onClick={handleCoverAutoGenerate}
             className="mt-3 rounded-full bg-[var(--olive)] px-6 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
           >
-            {isCoverAutoPending ? "Menjana imej..." : "Auto jana + auto pasang sampul"}
+            {isCoverAutoPending ? "生成图片中..." : "自动生成并上架封面"}
           </button>
 
           <p className="mt-4 text-sm leading-7 text-[var(--muted)]">
-            Sistem sekarang menyokong dua aliran: auto jana terus ke Supabase dan pasang pada buku, atau upload manual untuk menggantikan sampul bila-bila masa dari backend.
+            你不需要再去别的地方单独做封面。系统已经支持后台一键自动出图并上架，也支持你之后从后台上传替换图。
           </p>
         </div>
 
         <section className="glass rounded-[32px] p-6">
-          <p className="text-xs uppercase tracking-[0.28em] text-[var(--accent)]">Output sampul</p>
+          <p className="text-xs uppercase tracking-[0.28em] text-[var(--accent)]">输出结果</p>
           {coverResult.error ? (
             <div className="mt-5 rounded-[24px] border border-red-200 bg-red-50 p-5 text-sm leading-7 text-red-800">
-              <p className="font-semibold">Ralat: {coverResult.error}</p>
+              <p className="font-semibold">错误：{coverResult.error}</p>
               {coverResult.raw ? (
                 <pre className="mt-4 overflow-x-auto whitespace-pre-wrap text-xs">{coverResult.raw}</pre>
               ) : null}
@@ -864,12 +880,12 @@ export function AdminGenerator() {
           {coverResult.data ? (
             <div className="mt-5 space-y-5">
               <SaveBanner saved={coverResult.saved} saveError={coverResult.saveError} />
-              <InfoCard title="Prompt utama" body={coverResult.data.prompt} />
-              <InfoCard title="Prompt alternatif" body={coverResult.data.altPrompt} />
-              <InfoCard title="Hook visual" body={coverResult.data.visualHook} />
-              <InfoCard title="Rawatan tajuk" body={coverResult.data.titleTreatment} />
+              <InfoCard title="主提示词" body={coverResult.data.prompt} />
+              <InfoCard title="备用提示词" body={coverResult.data.altPrompt} />
+              <InfoCard title="视觉钩子" body={coverResult.data.visualHook} />
+              <InfoCard title="标题处理建议" body={coverResult.data.titleTreatment} />
               <div className="rounded-[24px] border border-[var(--border)] bg-white/80 p-5">
-                <p className="text-xs uppercase tracking-[0.24em] text-[var(--muted)]">Palet warna</p>
+                <p className="text-xs uppercase tracking-[0.24em] text-[var(--muted)]">色盘建议</p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   {coverResult.data.palette.map((tone) => (
                     <span
@@ -881,8 +897,8 @@ export function AdminGenerator() {
                   ))}
                 </div>
               </div>
-              {coverImageUrl ? <InfoCard title="URL imej utama" body={coverImageUrl} /> : null}
-              {coverThumbnailUrl ? <InfoCard title="URL thumbnail" body={coverThumbnailUrl} /> : null}
+              {coverImageUrl ? <InfoCard title="主图 URL" body={coverImageUrl} /> : null}
+              {coverThumbnailUrl ? <InfoCard title="缩略图 URL" body={coverThumbnailUrl} /> : null}
               <div className="grid gap-4 md:grid-cols-2">
                 <button
                   type="button"
@@ -890,11 +906,11 @@ export function AdminGenerator() {
                   onClick={handleCoverSave}
                   className="rounded-full bg-[var(--olive)] px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
                 >
-                  {isCoverSavePending ? "Menyimpan..." : "Simpan aset sampul"}
+                  {isCoverSavePending ? "保存中..." : "保存当前封面"}
                 </button>
 
                 <label className="rounded-[20px] border border-[var(--border)] bg-white/80 px-4 py-3 text-sm font-semibold text-[var(--accent-deep)]">
-                  Upload pengganti
+                  上传替代封面
                   <input
                     type="file"
                     accept="image/*"
@@ -909,7 +925,7 @@ export function AdminGenerator() {
                 onClick={handleCoverUpload}
                 className="rounded-full border border-[var(--border)] bg-white/85 px-5 py-3 text-sm font-semibold text-[var(--foreground)] transition hover:bg-white disabled:opacity-60"
               >
-                {isCoverUploadPending ? "Memuat naik..." : "Upload dan ganti sampul"}
+                {isCoverUploadPending ? "上传中..." : "上传并替换封面"}
               </button>
             </div>
           ) : null}
@@ -935,9 +951,9 @@ function SaveBanner({
       }`}
     >
       {saved
-        ? "Hasil ini telah disimpan ke Supabase."
-        : "Hasil dijana, tetapi simpanan ke Supabase memerlukan service role key."}
-      {saveError ? ` Ralat simpan: ${saveError}` : null}
+        ? "结果已经保存到 Supabase。"
+        : "结果已生成，但当前环境没有完整服务端写入权限。"}
+      {saveError ? ` 保存错误：${saveError}` : null}
     </div>
   );
 }

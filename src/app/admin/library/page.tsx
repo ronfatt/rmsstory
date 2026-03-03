@@ -10,17 +10,17 @@ export default async function AdminLibraryPage() {
       <div className="page-shell">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="text-xs uppercase tracking-[0.28em] text-[var(--accent)]">Admin library</p>
+            <p className="text-xs uppercase tracking-[0.28em] text-[var(--accent)]">中文后台</p>
             <h1 className="mt-3 text-5xl font-semibold tracking-[-0.04em] text-[var(--accent-deep)]">
-              Buku yang sudah terbit dan draft yang sedang dibina.
+              书库管理与发布中心
             </h1>
           </div>
           <div className="flex gap-4 text-sm font-semibold">
             <Link href="/admin" className="text-[var(--accent-deep)] underline underline-offset-4">
-              Kembali ke studio
+              返回功能工作台
             </Link>
             <Link href="/" className="text-[var(--accent-deep)] underline underline-offset-4">
-              Laman utama
+              返回前台首页
             </Link>
           </div>
         </div>
