@@ -28,6 +28,13 @@ export function LibraryManager({ publishedBooks, draftBooks }: LibraryManagerPro
   const [releaseHour, setReleaseHour] = useState("19");
   const [releaseMinute, setReleaseMinute] = useState("0");
   const [isPending, startTransition] = useTransition();
+  const [editingDraftId, setEditingDraftId] = useState<string | null>(null);
+  const [draftForm, setDraftForm] = useState({
+    title: "",
+    genre: "",
+    premise: "",
+    tags: "",
+  });
 
   useEffect(() => {
     if (adminToken.trim()) {
@@ -86,6 +93,84 @@ export function LibraryManager({ publishedBooks, draftBooks }: LibraryManagerPro
       }
 
       setFeedback(successMessage);
+      window.location.reload();
+    });
+  }
+
+  function openDraftEditor(book: AdminDraftBook) {
+    setEditingDraftId(book.id);
+    setDraftForm({
+      title: book.title,
+      genre: book.genre,
+      premise: book.premise,
+      tags: book.tags.join(", "),
+    });
+  }
+
+  function handleDraftMetaSave(bookId: string) {
+    startTransition(async () => {
+      setFeedback("");
+
+      const response = await fetch("/api/admin/update-draft", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-token": adminToken,
+        },
+        body: JSON.stringify({
+          bibleId: bookId,
+          title: draftForm.title,
+          genre: draftForm.genre,
+          premise: draftForm.premise,
+          tags: draftForm.tags
+            .split(",")
+            .map((item) => item.trim())
+            .filter(Boolean),
+        }),
+      });
+
+      const payload = (await response.json()) as { error?: string };
+
+      if (!response.ok) {
+        setFeedback(payload.error ?? "保存草稿资料失败。");
+        return;
+      }
+
+      setFeedback("草稿资料已保存。");
+      setEditingDraftId(null);
+      window.location.reload();
+    });
+  }
+
+  function handleGenerateNextDraft(bookId: string, title: string) {
+    startTransition(async () => {
+      setFeedback("");
+
+      const response = await fetch("/api/admin/generate-next-draft", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-token": adminToken,
+        },
+        body: JSON.stringify({
+          bibleId: bookId,
+          chapterLengthGoal: "3200-4500 patah perkataan",
+        }),
+      });
+
+      const payload = (await response.json()) as {
+        error?: string;
+        data?: { chapterNumber?: number; title?: string; wordCount?: number };
+      };
+
+      if (!response.ok) {
+        setFeedback(payload.error ?? "生成下一章失败。");
+        return;
+      }
+
+      setFeedback(
+        `《${title}》已生成第 ${payload.data?.chapterNumber ?? "?"} 章：${payload.data?.title ?? ""}`,
+      );
       window.location.reload();
     });
   }
@@ -287,6 +372,24 @@ export function LibraryManager({ publishedBooks, draftBooks }: LibraryManagerPro
                       </Link>
                       <button
                         type="button"
+                        disabled={isPending || !adminToken || !book.nextChapterNumber}
+                        onClick={() => handleGenerateNextDraft(book.id, book.title)}
+                        className="rounded-full border border-[var(--border)] bg-white/80 px-5 py-3 text-sm font-semibold text-[var(--foreground)] disabled:opacity-60"
+                      >
+                        {book.nextChapterNumber ? `生成第 ${book.nextChapterNumber} 章` : "没有下一章可生成"}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isPending}
+                        onClick={() =>
+                          editingDraftId === book.id ? setEditingDraftId(null) : openDraftEditor(book)
+                        }
+                        className="rounded-full border border-[var(--border)] bg-white/80 px-5 py-3 text-sm font-semibold text-[var(--foreground)] disabled:opacity-60"
+                      >
+                        {editingDraftId === book.id ? "收起编辑" : "编辑草稿"}
+                      </button>
+                      <button
+                        type="button"
                         disabled={isPending || !adminToken}
                         onClick={() =>
                           runAction(
@@ -320,6 +423,61 @@ export function LibraryManager({ publishedBooks, draftBooks }: LibraryManagerPro
                         删除草稿
                       </button>
                     </div>
+                    {editingDraftId === book.id ? (
+                      <div className="mt-5 grid gap-4 rounded-[24px] border border-[var(--border)] bg-white/70 p-4">
+                        <label className="text-sm font-semibold text-[var(--accent-deep)]">
+                          标题
+                          <input
+                            value={draftForm.title}
+                            onChange={(event) => setDraftForm((current) => ({ ...current, title: event.target.value }))}
+                            className="mt-2 w-full rounded-[16px] border border-[var(--border)] bg-white/90 px-4 py-3 text-sm outline-none"
+                          />
+                        </label>
+                        <label className="text-sm font-semibold text-[var(--accent-deep)]">
+                          题材
+                          <input
+                            value={draftForm.genre}
+                            onChange={(event) => setDraftForm((current) => ({ ...current, genre: event.target.value }))}
+                            className="mt-2 w-full rounded-[16px] border border-[var(--border)] bg-white/90 px-4 py-3 text-sm outline-none"
+                          />
+                        </label>
+                        <label className="text-sm font-semibold text-[var(--accent-deep)]">
+                          简介 / 核心设定
+                          <textarea
+                            value={draftForm.premise}
+                            onChange={(event) => setDraftForm((current) => ({ ...current, premise: event.target.value }))}
+                            className="mt-2 min-h-32 w-full rounded-[20px] border border-[var(--border)] bg-white/90 px-4 py-3 text-sm outline-none"
+                          />
+                        </label>
+                        <label className="text-sm font-semibold text-[var(--accent-deep)]">
+                          标签
+                          <input
+                            value={draftForm.tags}
+                            onChange={(event) => setDraftForm((current) => ({ ...current, tags: event.target.value }))}
+                            placeholder="豪门, 复仇, 遗产"
+                            className="mt-2 w-full rounded-[16px] border border-[var(--border)] bg-white/90 px-4 py-3 text-sm outline-none"
+                          />
+                        </label>
+                        <div className="flex flex-wrap gap-3">
+                          <button
+                            type="button"
+                            disabled={isPending || !adminToken}
+                            onClick={() => handleDraftMetaSave(book.id)}
+                            className="rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
+                          >
+                            保存草稿资料
+                          </button>
+                          <button
+                            type="button"
+                            disabled={isPending}
+                            onClick={() => setEditingDraftId(null)}
+                            className="rounded-full border border-[var(--border)] bg-white/85 px-5 py-3 text-sm font-semibold text-[var(--foreground)] disabled:opacity-60"
+                          >
+                            取消
+                          </button>
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               </article>

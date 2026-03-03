@@ -22,10 +22,12 @@ export type AdminDraftBook = {
   title: string;
   genre: string;
   premise: string;
+  tags: string[];
   coverImageUrl?: string;
   coverThumbnailUrl?: string;
   outlineCount: number;
   draftCount: number;
+  nextChapterNumber?: number;
   createdAt: string;
 };
 
@@ -56,7 +58,7 @@ export const getAdminLibraryOverview = cache(async (): Promise<AdminLibraryOverv
       .order("published_at", { ascending: false }),
     supabase
       .from("book_bibles")
-      .select("id, title, genre, premise, created_at")
+      .select("id, title, genre, premise, payload, created_at")
       .order("created_at", { ascending: false }),
     supabase
       .from("cover_assets")
@@ -67,7 +69,7 @@ export const getAdminLibraryOverview = cache(async (): Promise<AdminLibraryOverv
       .select("book_bible_id"),
     supabase
       .from("chapter_drafts")
-      .select("book_bible_id"),
+      .select("book_bible_id, chapter_number"),
     supabase
       .from("release_schedules")
       .select("book_id, release_hour, release_minute, timezone, active"),
@@ -134,24 +136,40 @@ export const getAdminLibraryOverview = cache(async (): Promise<AdminLibraryOverv
   }
 
   const draftCount = new Map<string, number>();
+  const maxDraftChapter = new Map<string, number>();
   for (const row of draftsResponse.data ?? []) {
     if (!row.book_bible_id) {
       continue;
     }
     draftCount.set(row.book_bible_id, (draftCount.get(row.book_bible_id) ?? 0) + 1);
+    maxDraftChapter.set(
+      row.book_bible_id,
+      Math.max(maxDraftChapter.get(row.book_bible_id) ?? 0, (row as { chapter_number?: number }).chapter_number ?? 0),
+    );
   }
 
   const draftBooks =
-    draftResponse.data?.map((book) => ({
-      id: book.id,
-      title: book.title,
-      genre: book.genre,
-      premise: book.premise,
-      createdAt: book.created_at,
-      outlineCount: outlineCount.get(book.id) ?? 0,
-      draftCount: draftCount.get(book.id) ?? 0,
-      ...selectedDraftCovers.get(book.id),
-    })) ?? [];
+    draftResponse.data?.map((book) => {
+      const totalOutlines = outlineCount.get(book.id) ?? 0;
+      const currentMaxDraftChapter = maxDraftChapter.get(book.id) ?? 0;
+      const nextChapterNumber =
+        totalOutlines > currentMaxDraftChapter ? currentMaxDraftChapter + 1 : undefined;
+
+      return {
+        id: book.id,
+        title: book.title,
+        genre: book.genre,
+        premise: book.premise,
+        tags: Array.isArray((book as { payload?: { tags?: string[] } }).payload?.tags)
+          ? (((book as { payload?: { tags?: string[] } }).payload?.tags as string[]) ?? [])
+          : [],
+        createdAt: book.created_at,
+        outlineCount: totalOutlines,
+        draftCount: draftCount.get(book.id) ?? 0,
+        nextChapterNumber,
+        ...selectedDraftCovers.get(book.id),
+      };
+    }) ?? [];
 
   return { publishedBooks, draftBooks };
 });
