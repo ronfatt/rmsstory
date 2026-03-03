@@ -5,6 +5,7 @@ import type {
   GeneratedChapterDraft,
   GeneratedChapterOutline,
   GeneratedChapterRevision,
+  GeneratedCoverConcept,
   GeneratedNovelBible,
 } from "@/lib/admin";
 
@@ -15,6 +16,7 @@ type ResultEnvelope<T> = {
   saved?: boolean;
   saveError?: string;
   bibleId?: string;
+  coverAssetId?: string;
 };
 
 const initialPremise =
@@ -37,6 +39,7 @@ export function AdminGenerator() {
   const [outlineResult, setOutlineResult] = useState<ResultEnvelope<GeneratedChapterOutline[]>>({});
   const [draftResult, setDraftResult] = useState<ResultEnvelope<GeneratedChapterDraft>>({});
   const [revisionResult, setRevisionResult] = useState<ResultEnvelope<GeneratedChapterRevision>>({});
+  const [coverResult, setCoverResult] = useState<ResultEnvelope<GeneratedCoverConcept>>({});
   const [revisionMode, setRevisionMode] = useState<"continue" | "rewrite" | "expand">("rewrite");
   const [revisionInstruction, setRevisionInstruction] = useState(
     "Jadikan bab ini lebih dramatik, lebih panjang, lebih emosional, dan lebih ketagihan seperti web novel bersiri premium.",
@@ -44,10 +47,17 @@ export function AdminGenerator() {
   const [workingTitle, setWorkingTitle] = useState("Bab 1");
   const [workingExcerpt, setWorkingExcerpt] = useState("");
   const [workingContent, setWorkingContent] = useState("");
+  const [coverDirection, setCoverDirection] = useState(
+    "watak utama dominan, aura mewah dan berbahaya, sinematik, kontras tinggi, susun atur sesuai untuk novel app",
+  );
+  const [coverImageUrl, setCoverImageUrl] = useState("");
+  const [coverThumbnailUrl, setCoverThumbnailUrl] = useState("");
   const [isBiblePending, startBibleTransition] = useTransition();
   const [isOutlinePending, startOutlineTransition] = useTransition();
   const [isDraftPending, startDraftTransition] = useTransition();
   const [isRevisionPending, startRevisionTransition] = useTransition();
+  const [isCoverPending, startCoverTransition] = useTransition();
+  const [isCoverSavePending, startCoverSaveTransition] = useTransition();
 
   async function postJson<T>(url: string, body: Record<string, unknown>) {
     const response = await fetch(url, {
@@ -197,6 +207,67 @@ export function AdminGenerator() {
         setWorkingExcerpt(payload.data.excerpt);
         setWorkingContent(payload.data.content.join("\n\n"));
       }
+    });
+  }
+
+  function handleCoverGenerate() {
+    if (!bibleResult.data) {
+      return;
+    }
+
+    startCoverTransition(async () => {
+      setCoverResult({});
+
+      const { response, payload } = await postJson<GeneratedCoverConcept>(
+        "/api/admin/generate-cover-prompt",
+        {
+          bible: bibleResult.data,
+          bibleId: bibleResult.bibleId,
+          genre,
+          coverDirection,
+        },
+      );
+
+      if (!response.ok) {
+        setCoverResult({ error: payload.error ?? "Request failed.", raw: payload.raw });
+        return;
+      }
+
+      setCoverResult(payload);
+    });
+  }
+
+  function handleCoverSave() {
+    const coverData = coverResult.data;
+
+    if (!coverData) {
+      return;
+    }
+
+    startCoverSaveTransition(async () => {
+      const { response, payload } = await postJson<never>("/api/admin/save-cover-asset", {
+        bibleId: bibleResult.bibleId,
+        bookTitle: bibleResult.data?.title ?? "Novel Tanpa Tajuk",
+        prompt: coverData.prompt,
+        imageUrl: coverImageUrl,
+        thumbnailUrl: coverThumbnailUrl,
+        selected: true,
+      });
+
+      if (!response.ok) {
+        setCoverResult((current) => ({
+          ...current,
+          error: payload.error ?? "Failed to save cover asset.",
+        }));
+        return;
+      }
+
+      setCoverResult((current) => ({
+        ...current,
+        saved: true,
+        saveError: undefined,
+        coverAssetId: payload.coverAssetId,
+      }));
     });
   }
 
@@ -620,6 +691,107 @@ export function AdminGenerator() {
                   ))}
                 </div>
               </div>
+            </div>
+          ) : null}
+        </section>
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-[0.85fr_1.15fr]">
+        <div className="glass rounded-[32px] p-6">
+          <p className="text-xs uppercase tracking-[0.28em] text-[var(--accent)]">Langkah 5</p>
+          <h2 className="mt-3 text-3xl font-semibold text-[var(--accent-deep)]">Konsep dan aset sampul</h2>
+
+          <label className="mt-6 block text-sm font-semibold text-[var(--accent-deep)]">
+            Arah visual
+            <textarea
+              value={coverDirection}
+              onChange={(event) => setCoverDirection(event.target.value)}
+              className="mt-2 min-h-28 w-full rounded-[20px] border border-[var(--border)] bg-white/80 px-4 py-3 text-sm font-normal text-[var(--foreground)] outline-none"
+            />
+          </label>
+
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <label className="text-sm font-semibold text-[var(--accent-deep)]">
+              URL imej utama
+              <input
+                value={coverImageUrl}
+                onChange={(event) => setCoverImageUrl(event.target.value)}
+                placeholder="https://..."
+                className="mt-2 w-full rounded-[16px] border border-[var(--border)] bg-white/80 px-4 py-3 text-sm font-normal outline-none"
+              />
+            </label>
+            <label className="text-sm font-semibold text-[var(--accent-deep)]">
+              URL thumbnail
+              <input
+                value={coverThumbnailUrl}
+                onChange={(event) => setCoverThumbnailUrl(event.target.value)}
+                placeholder="https://..."
+                className="mt-2 w-full rounded-[16px] border border-[var(--border)] bg-white/80 px-4 py-3 text-sm font-normal outline-none"
+              />
+            </label>
+          </div>
+
+          <button
+            type="button"
+            disabled={!bibleResult.data || isCoverPending}
+            onClick={handleCoverGenerate}
+            className="mt-6 rounded-full bg-[var(--accent)] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[var(--accent-deep)] disabled:opacity-60"
+          >
+            {isCoverPending ? "Menjana..." : "Jana konsep sampul"}
+          </button>
+
+          <p className="mt-4 text-sm leading-7 text-[var(--muted)]">
+            Langkah ini menjana prompt dan arah visual. Imej sebenar masih boleh dibuat di tool lain, kemudian URL hasil akhir diisi semula di sini atau ke Supabase selepas itu.
+          </p>
+        </div>
+
+        <section className="glass rounded-[32px] p-6">
+          <p className="text-xs uppercase tracking-[0.28em] text-[var(--accent)]">Output sampul</p>
+          {coverResult.error ? (
+            <div className="mt-5 rounded-[24px] border border-red-200 bg-red-50 p-5 text-sm leading-7 text-red-800">
+              <p className="font-semibold">Ralat: {coverResult.error}</p>
+              {coverResult.raw ? (
+                <pre className="mt-4 overflow-x-auto whitespace-pre-wrap text-xs">{coverResult.raw}</pre>
+              ) : null}
+            </div>
+          ) : null}
+
+          {!coverResult.data && !coverResult.error ? (
+            <div className="mt-5 rounded-[24px] border border-dashed border-[var(--border)] bg-white/50 p-6 text-sm leading-7 text-[var(--muted)]">
+              Selepas novel bible siap, jana konsep sampul supaya setiap buku ada identiti visual yang menarik, jelas genre, dan sesuai untuk thumbnail kecil di aplikasi.
+            </div>
+          ) : null}
+
+          {coverResult.data ? (
+            <div className="mt-5 space-y-5">
+              <SaveBanner saved={coverResult.saved} saveError={coverResult.saveError} />
+              <InfoCard title="Prompt utama" body={coverResult.data.prompt} />
+              <InfoCard title="Prompt alternatif" body={coverResult.data.altPrompt} />
+              <InfoCard title="Hook visual" body={coverResult.data.visualHook} />
+              <InfoCard title="Rawatan tajuk" body={coverResult.data.titleTreatment} />
+              <div className="rounded-[24px] border border-[var(--border)] bg-white/80 p-5">
+                <p className="text-xs uppercase tracking-[0.24em] text-[var(--muted)]">Palet warna</p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {coverResult.data.palette.map((tone) => (
+                    <span
+                      key={tone}
+                      className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-xs text-[var(--foreground)]"
+                    >
+                      {tone}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              {coverImageUrl ? <InfoCard title="URL imej utama" body={coverImageUrl} /> : null}
+              {coverThumbnailUrl ? <InfoCard title="URL thumbnail" body={coverThumbnailUrl} /> : null}
+              <button
+                type="button"
+                disabled={isCoverSavePending}
+                onClick={handleCoverSave}
+                className="rounded-full bg-[var(--olive)] px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
+              >
+                {isCoverSavePending ? "Menyimpan..." : "Simpan aset sampul"}
+              </button>
             </div>
           ) : null}
         </section>

@@ -50,6 +50,14 @@ export type GeneratedChapterRevision = {
   editorNote: string;
 };
 
+export type GeneratedCoverConcept = {
+  prompt: string;
+  altPrompt: string;
+  visualHook: string;
+  titleTreatment: string;
+  palette: string[];
+};
+
 export function extractJsonObject(raw: string) {
   const fencedMatch = raw.match(/```json\s*([\s\S]*?)```/i);
   const candidate = fencedMatch?.[1] ?? raw;
