@@ -17,6 +17,8 @@ type ResultEnvelope<T> = {
   saveError?: string;
   bibleId?: string;
   coverAssetId?: string;
+  imageUrl?: string;
+  thumbnailUrl?: string;
 };
 
 const initialPremise =
@@ -52,12 +54,15 @@ export function AdminGenerator() {
   );
   const [coverImageUrl, setCoverImageUrl] = useState("");
   const [coverThumbnailUrl, setCoverThumbnailUrl] = useState("");
+  const [replacementFile, setReplacementFile] = useState<File | null>(null);
   const [isBiblePending, startBibleTransition] = useTransition();
   const [isOutlinePending, startOutlineTransition] = useTransition();
   const [isDraftPending, startDraftTransition] = useTransition();
   const [isRevisionPending, startRevisionTransition] = useTransition();
   const [isCoverPending, startCoverTransition] = useTransition();
   const [isCoverSavePending, startCoverSaveTransition] = useTransition();
+  const [isCoverAutoPending, startCoverAutoTransition] = useTransition();
+  const [isCoverUploadPending, startCoverUploadTransition] = useTransition();
 
   async function postJson<T>(url: string, body: Record<string, unknown>) {
     const response = await fetch(url, {
@@ -237,6 +242,39 @@ export function AdminGenerator() {
     });
   }
 
+  function handleCoverAutoGenerate() {
+    if (!bibleResult.data) {
+      return;
+    }
+
+    startCoverAutoTransition(async () => {
+      setCoverResult({});
+
+      const { response, payload } = await postJson<GeneratedCoverConcept>(
+        "/api/admin/generate-cover-asset",
+        {
+          bible: bibleResult.data,
+          bibleId: bibleResult.bibleId,
+          genre,
+          coverDirection,
+        },
+      );
+
+      if (!response.ok) {
+        setCoverResult({ error: payload.error ?? "Failed to auto-generate cover." });
+        return;
+      }
+
+      setCoverResult(payload);
+      if (payload.imageUrl) {
+        setCoverImageUrl(payload.imageUrl);
+      }
+      if (payload.thumbnailUrl) {
+        setCoverThumbnailUrl(payload.thumbnailUrl);
+      }
+    });
+  }
+
   function handleCoverSave() {
     const coverData = coverResult.data;
 
@@ -268,6 +306,58 @@ export function AdminGenerator() {
         saveError: undefined,
         coverAssetId: payload.coverAssetId,
       }));
+    });
+  }
+
+  function handleCoverUpload() {
+    const coverData = coverResult.data;
+
+    if (!replacementFile || !coverData) {
+      return;
+    }
+
+    startCoverUploadTransition(async () => {
+      const formData = new FormData();
+      formData.append("file", replacementFile);
+      formData.append("prompt", coverData.prompt);
+      formData.append("bookTitle", bibleResult.data?.title ?? "Novel Tanpa Tajuk");
+      formData.append("bibleId", bibleResult.bibleId ?? "");
+
+      const response = await fetch("/api/admin/upload-cover-asset", {
+        method: "POST",
+        headers: {
+          "x-admin-token": adminToken,
+        },
+        body: formData,
+      });
+
+      const payload = (await response.json()) as ResultEnvelope<never> & {
+        imageUrl?: string;
+        thumbnailUrl?: string;
+      };
+
+      if (!response.ok) {
+        setCoverResult((current) => ({
+          ...current,
+          error: payload.error ?? "Failed to upload replacement cover.",
+        }));
+        return;
+      }
+
+      setCoverResult((current) => ({
+        ...current,
+        saved: true,
+        saveError: undefined,
+        coverAssetId: payload.coverAssetId,
+      }));
+
+      if (payload.imageUrl) {
+        setCoverImageUrl(payload.imageUrl);
+      }
+      if (payload.thumbnailUrl) {
+        setCoverThumbnailUrl(payload.thumbnailUrl);
+      }
+      setReplacementFile(null);
     });
   }
 
@@ -740,8 +830,17 @@ export function AdminGenerator() {
             {isCoverPending ? "Menjana..." : "Jana konsep sampul"}
           </button>
 
+          <button
+            type="button"
+            disabled={!bibleResult.data || isCoverAutoPending}
+            onClick={handleCoverAutoGenerate}
+            className="mt-3 rounded-full bg-[var(--olive)] px-6 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
+          >
+            {isCoverAutoPending ? "Menjana imej..." : "Auto jana + auto pasang sampul"}
+          </button>
+
           <p className="mt-4 text-sm leading-7 text-[var(--muted)]">
-            Langkah ini menjana prompt dan arah visual. Imej sebenar masih boleh dibuat di tool lain, kemudian URL hasil akhir diisi semula di sini atau ke Supabase selepas itu.
+            Sistem sekarang menyokong dua aliran: auto jana terus ke Supabase dan pasang pada buku, atau upload manual untuk menggantikan sampul bila-bila masa dari backend.
           </p>
         </div>
 
@@ -784,13 +883,33 @@ export function AdminGenerator() {
               </div>
               {coverImageUrl ? <InfoCard title="URL imej utama" body={coverImageUrl} /> : null}
               {coverThumbnailUrl ? <InfoCard title="URL thumbnail" body={coverThumbnailUrl} /> : null}
+              <div className="grid gap-4 md:grid-cols-2">
+                <button
+                  type="button"
+                  disabled={isCoverSavePending}
+                  onClick={handleCoverSave}
+                  className="rounded-full bg-[var(--olive)] px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
+                >
+                  {isCoverSavePending ? "Menyimpan..." : "Simpan aset sampul"}
+                </button>
+
+                <label className="rounded-[20px] border border-[var(--border)] bg-white/80 px-4 py-3 text-sm font-semibold text-[var(--accent-deep)]">
+                  Upload pengganti
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(event) => setReplacementFile(event.target.files?.[0] ?? null)}
+                    className="mt-2 block w-full text-sm font-normal text-[var(--foreground)]"
+                  />
+                </label>
+              </div>
               <button
                 type="button"
-                disabled={isCoverSavePending}
-                onClick={handleCoverSave}
-                className="rounded-full bg-[var(--olive)] px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
+                disabled={!replacementFile || !coverResult.data || isCoverUploadPending}
+                onClick={handleCoverUpload}
+                className="rounded-full border border-[var(--border)] bg-white/85 px-5 py-3 text-sm font-semibold text-[var(--foreground)] transition hover:bg-white disabled:opacity-60"
               >
-                {isCoverSavePending ? "Menyimpan..." : "Simpan aset sampul"}
+                {isCoverUploadPending ? "Memuat naik..." : "Upload dan ganti sampul"}
               </button>
             </div>
           ) : null}

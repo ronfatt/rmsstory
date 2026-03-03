@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAuthorizedAdminToken } from "@/lib/admin";
+import { persistSelectedCover } from "@/lib/cover-assets";
 import { getSupabaseAdminClient } from "@/lib/supabase";
 
 type SavePayload = {
@@ -32,39 +33,22 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Prompt and book title are required." }, { status: 400 });
   }
 
-  const { data, error } = await supabase
-    .from("cover_assets")
-    .insert({
-      book_bible_id: body.bibleId ?? null,
-      book_title: bookTitle,
+  try {
+    const savedAsset = await persistSelectedCover({
+      supabase,
+      bibleId: body.bibleId,
+      bookTitle,
       prompt,
-      image_url: body.imageUrl?.trim() || null,
-      thumbnail_url: body.thumbnailUrl?.trim() || null,
-      status: body.imageUrl ? "image_ready" : "prompt_ready",
+      imageUrl: body.imageUrl?.trim() || undefined,
+      thumbnailUrl: body.thumbnailUrl?.trim() || undefined,
       selected: body.selected ?? false,
-    })
-    .select("id")
-    .single();
+    });
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ saved: true, coverAssetId: savedAsset.coverAssetId });
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Failed to save cover asset." },
+      { status: 500 },
+    );
   }
-
-  if (body.selected) {
-    await supabase
-      .from("cover_assets")
-      .update({ selected: false })
-      .eq("book_title", bookTitle)
-      .neq("id", data.id);
-
-    await supabase
-      .from("books")
-      .update({
-        cover_image_url: body.imageUrl?.trim() || null,
-        cover_thumbnail_url: body.thumbnailUrl?.trim() || null,
-      })
-      .eq("title", bookTitle);
-  }
-
-  return NextResponse.json({ saved: true, coverAssetId: data.id });
 }
