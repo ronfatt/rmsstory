@@ -30,6 +30,7 @@ export function LibraryManager({ publishedBooks, draftBooks }: LibraryManagerPro
   const [isPending, startTransition] = useTransition();
   const [editingDraftId, setEditingDraftId] = useState<string | null>(null);
   const [previewDraftId, setPreviewDraftId] = useState<string | null>(null);
+  const [chaptersDraftId, setChaptersDraftId] = useState<string | null>(null);
   const [draftForm, setDraftForm] = useState({
     title: "",
     genre: "",
@@ -383,6 +384,16 @@ export function LibraryManager({ publishedBooks, draftBooks }: LibraryManagerPro
                       </button>
                       <button
                         type="button"
+                        disabled={book.draftedChapters.length === 0}
+                        onClick={() =>
+                          setChaptersDraftId((current) => (current === book.id ? null : book.id))
+                        }
+                        className="rounded-full border border-[var(--border)] bg-white/80 px-5 py-3 text-sm font-semibold text-[var(--foreground)] disabled:opacity-60"
+                      >
+                        {chaptersDraftId === book.id ? "收起章节列表" : `已写章节 ${book.draftedChapters.length} 章`}
+                      </button>
+                      <button
+                        type="button"
                         disabled={isPending || !adminToken || !book.nextChapterNumber}
                         onClick={() => handleGenerateNextDraft(book.id, book.title)}
                         className="rounded-full border border-[var(--border)] bg-white/80 px-5 py-3 text-sm font-semibold text-[var(--foreground)] disabled:opacity-60"
@@ -515,6 +526,28 @@ export function LibraryManager({ publishedBooks, draftBooks }: LibraryManagerPro
                         <p className="mt-4 text-xs leading-6 text-[var(--muted)]">
                           这里只展示前两段预览。点“继续生成”后，高级模式会载入这本草稿的完整上下文继续写。
                         </p>
+                      </div>
+                    ) : null}
+                    {chaptersDraftId === book.id && book.draftedChapters.length > 0 ? (
+                      <div className="mt-5 rounded-[24px] border border-[var(--border)] bg-white/70 p-4">
+                        <p className="text-xs uppercase tracking-[0.22em] text-[var(--muted)]">
+                          已写章节列表
+                        </p>
+                        <div className="mt-4 space-y-3">
+                          {book.draftedChapters.map((chapter) => (
+                            <div
+                              key={`${book.id}-chapter-${chapter.chapterNumber}`}
+                              className="rounded-[18px] border border-[var(--border)] bg-white/75 p-4"
+                            >
+                              <h4 className="text-base font-semibold text-[var(--accent-deep)]">
+                                第 {chapter.chapterNumber} 章 · {chapter.title}
+                              </h4>
+                              <p className="mt-2 text-sm leading-7 text-[var(--muted)]">
+                                {chapter.excerpt}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     ) : null}
                   </div>

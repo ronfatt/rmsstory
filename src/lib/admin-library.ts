@@ -23,6 +23,11 @@ export type AdminDraftBook = {
   genre: string;
   premise: string;
   tags: string[];
+  draftedChapters: Array<{
+    chapterNumber: number;
+    title: string;
+    excerpt: string;
+  }>;
   latestDraftTitle?: string;
   latestDraftExcerpt?: string;
   latestDraftPreview?: string[];
@@ -140,6 +145,14 @@ export const getAdminLibraryOverview = cache(async (): Promise<AdminLibraryOverv
   }
 
   const draftCount = new Map<string, number>();
+  const draftedChaptersByBook = new Map<
+    string,
+    Array<{
+      chapterNumber: number;
+      title: string;
+      excerpt: string;
+    }>
+  >();
   const latestDraftByBook = new Map<
     string,
     {
@@ -162,6 +175,17 @@ export const getAdminLibraryOverview = cache(async (): Promise<AdminLibraryOverv
 
     const current = latestDraftByBook.get(row.book_bible_id);
     const chapterNumber = (row as { chapter_number?: number }).chapter_number ?? 0;
+    const draftedChapters = draftedChaptersByBook.get(row.book_bible_id) ?? [];
+
+    if (!draftedChapters.some((item) => item.chapterNumber === chapterNumber)) {
+      draftedChapters.push({
+        chapterNumber,
+        title: String((row as { title?: string }).title ?? ""),
+        excerpt: String((row as { excerpt?: string }).excerpt ?? ""),
+      });
+      draftedChapters.sort((left, right) => left.chapterNumber - right.chapterNumber);
+      draftedChaptersByBook.set(row.book_bible_id, draftedChapters);
+    }
 
     if (!current || chapterNumber >= current.chapterNumber) {
       latestDraftByBook.set(row.book_bible_id, {
@@ -190,6 +214,7 @@ export const getAdminLibraryOverview = cache(async (): Promise<AdminLibraryOverv
         tags: Array.isArray((book as { payload?: { tags?: string[] } }).payload?.tags)
           ? (((book as { payload?: { tags?: string[] } }).payload?.tags as string[]) ?? [])
           : [],
+        draftedChapters: draftedChaptersByBook.get(book.id) ?? [],
         createdAt: book.created_at,
         outlineCount: totalOutlines,
         draftCount: draftCount.get(book.id) ?? 0,
