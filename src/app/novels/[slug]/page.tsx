@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CoverArt } from "@/components/novels/cover-art";
 import { getNovelBySlug } from "@/lib/content";
 
 type NovelPageProps = {
@@ -24,14 +25,23 @@ export default async function NovelPage({ params }: NovelPageProps) {
         </Link>
 
         <section className="mt-6 grid gap-8 lg:grid-cols-[0.7fr_1.3fr]">
-          <div className={`cover-card rounded-[34px] bg-gradient-to-br ${novel.coverTone} p-8 text-white shadow-[var(--shadow)]`}>
-            <p className="text-xs uppercase tracking-[0.28em] text-white/72">{novel.genre}</p>
-            <h1 className="mt-16 max-w-[14rem] text-5xl font-semibold leading-[1.02]">{novel.title}</h1>
-            <p className="mt-4 max-w-[15rem] text-sm leading-7 text-white/84">{novel.tagline}</p>
-            <div className="mt-10 space-y-2 text-sm text-white/85">
-              <p>{novel.status}</p>
-              <p>{novel.updateTime}</p>
-              <p>{novel.metrics.readers}</p>
+          <div className="rounded-[34px] shadow-[var(--shadow)]">
+            <CoverArt
+              title={novel.title}
+              tagline={novel.tagline}
+              genre={novel.genre}
+              coverTone={novel.coverTone}
+              coverImageUrl={novel.coverImageUrl}
+              className="rounded-[34px] min-h-[540px]"
+              titleClassName="max-w-[14rem] text-5xl"
+              taglineClassName="max-w-[15rem] text-sm"
+            />
+            <div className="-mt-28 relative px-8 pb-8 text-white">
+              <div className="space-y-2 text-sm text-white/92">
+                <p>{novel.status}</p>
+                <p>{novel.updateTime}</p>
+                <p>{novel.metrics.readers}</p>
+              </div>
             </div>
           </div>
 

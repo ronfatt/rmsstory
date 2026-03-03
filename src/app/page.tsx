@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CoverArt } from "@/components/novels/cover-art";
 import { getNovels } from "@/lib/content";
 
 const categories = [
@@ -104,13 +105,16 @@ export default async function HomePage() {
           <div className="mt-8 grid gap-6 lg:grid-cols-3">
             {novels.map((novel) => (
               <article key={novel.slug} className="glass rounded-[30px] p-5">
-                <div
-                  className={`cover-card rounded-[24px] bg-gradient-to-br ${novel.coverTone} p-6 text-white`}
-                >
-                  <p className="text-xs uppercase tracking-[0.28em] text-white/70">{novel.genre}</p>
-                  <h3 className="mt-10 max-w-[12rem] text-3xl font-semibold leading-tight">{novel.title}</h3>
-                  <p className="mt-3 max-w-[13rem] text-sm leading-6 text-white/84">{novel.tagline}</p>
-                </div>
+                <CoverArt
+                  title={novel.title}
+                  tagline={novel.tagline}
+                  genre={novel.genre}
+                  coverTone={novel.coverTone}
+                  coverImageUrl={novel.coverImageUrl}
+                  className="rounded-[24px] min-h-[320px]"
+                  titleClassName="max-w-[12rem] text-3xl"
+                  taglineClassName="max-w-[13rem] text-sm"
+                />
                 <div className="mt-5">
                   <p className="text-sm leading-7 text-[var(--muted)]">{novel.synopsis}</p>
                   <div className="mt-4 flex flex-wrap gap-2">

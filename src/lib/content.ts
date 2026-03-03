@@ -11,6 +11,8 @@ type BookRow = {
   status: string;
   update_time: string;
   cover_tone: string;
+  cover_image_url: string | null;
+  cover_thumbnail_url: string | null;
   synopsis: string;
   hook: string;
   audience: string;
@@ -37,6 +39,8 @@ function mapNovel(book: BookRow, chapters: ChapterRow[]): Novel {
     status: book.status,
     updateTime: book.update_time,
     coverTone: book.cover_tone,
+    coverImageUrl: book.cover_image_url ?? undefined,
+    coverThumbnailUrl: book.cover_thumbnail_url ?? undefined,
     synopsis: book.synopsis,
     hook: book.hook,
     tags: book.tags,
@@ -79,6 +83,8 @@ const getRemoteNovels = cache(async (): Promise<Novel[] | null> => {
         status,
         update_time,
         cover_tone,
+        cover_image_url,
+        cover_thumbnail_url,
         synopsis,
         hook,
         audience,

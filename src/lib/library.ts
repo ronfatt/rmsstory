@@ -14,6 +14,8 @@ export type Novel = {
   status: string;
   updateTime: string;
   coverTone: string;
+  coverImageUrl?: string;
+  coverThumbnailUrl?: string;
   synopsis: string;
   hook: string;
   tags: string[];
@@ -35,6 +37,8 @@ export const novels: Novel[] = [
     status: "Dikemas kini setiap hari",
     updateTime: "Bab baru setiap jam 7:00 malam",
     coverTone: "from-amber-200 via-orange-400 to-rose-700",
+    coverImageUrl: undefined,
+    coverThumbnailUrl: undefined,
     synopsis:
       "Alya kembali ke Kuala Lumpur untuk menyelamatkan kedai buku warisan ibunya. Di tengah hutang, persaingan hartanah, dan surat-surat lama yang hilang, dia bertemu semula dengan Rayhan, lelaki yang pernah meninggalkannya tanpa penjelasan.",
     hook: "Setiap bab menolak Alya lebih dekat kepada jawapan: adakah cinta pertamanya punca kehancuran keluarga atau satu-satunya jalan keluar?",
@@ -95,6 +99,8 @@ export const novels: Novel[] = [
     status: "Bab baharu harian",
     updateTime: "Bab baru setiap jam 9:00 malam",
     coverTone: "from-emerald-200 via-teal-500 to-slate-800",
+    coverImageUrl: undefined,
+    coverThumbnailUrl: undefined,
     synopsis:
       "Di kerajaan pesisir yang dikawal oleh cahaya bulan, Dara hidup sebagai penenun biasa sehingga malam gerhana mendedahkan simbol warisan di pergelangan tangannya. Kini dia diburu oleh istana yang mahu menghapuskan pewaris terakhir takhta.",
     hook: "Setiap keputusan Dara boleh menyelamatkan kerajaannya atau memulakan perang yang telah diramal beratus tahun.",
@@ -142,6 +148,8 @@ export const novels: Novel[] = [
     status: "Diterbitkan setiap hari",
     updateTime: "Bab baru setiap jam 6:30 pagi",
     coverTone: "from-sky-200 via-cyan-400 to-blue-900",
+    coverImageUrl: undefined,
+    coverThumbnailUrl: undefined,
     synopsis:
       "Nurin pulang ke kampung selepas menerima rakaman suara arwah kakaknya yang sepatutnya mustahil wujud. Setiap jejak yang ditinggalkan membawa dia kepada rahsia keluarga yang telah disembunyikan sejak banjir besar lima belas tahun lalu.",
     hook: "Apabila masa lalu mula bersuara, Nurin perlu memilih antara melindungi keluarganya atau membongkar kebenaran hingga ke akar.",

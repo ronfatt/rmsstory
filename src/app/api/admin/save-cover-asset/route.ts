@@ -50,5 +50,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  if (body.selected) {
+    await supabase
+      .from("cover_assets")
+      .update({ selected: false })
+      .eq("book_title", bookTitle)
+      .neq("id", data.id);
+
+    await supabase
+      .from("books")
+      .update({
+        cover_image_url: body.imageUrl?.trim() || null,
+        cover_thumbnail_url: body.thumbnailUrl?.trim() || null,
+      })
+      .eq("title", bookTitle);
+  }
+
   return NextResponse.json({ saved: true, coverAssetId: data.id });
 }
