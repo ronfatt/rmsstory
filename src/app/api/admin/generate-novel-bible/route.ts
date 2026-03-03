@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { extractJsonObject, isAuthorizedAdminToken, type GeneratedNovelBible } from "@/lib/admin";
+import { saveGenerationJob } from "@/lib/generation-store";
 import { getOpenAIClient } from "@/lib/openai";
 import { getSupabaseAdminClient } from "@/lib/supabase";
 
@@ -58,6 +59,10 @@ Pulangkan JSON sahaja dengan struktur berikut:
   "hook": "string",
   "audience": "string",
   "tags": ["string", "string"],
+  "seoTitle": "string",
+  "seoDescription": "string",
+  "recommendationCopy": "string",
+  "coverPrompt": "string",
   "worldSummary": "string",
   "mainCharacters": [
     {
@@ -93,31 +98,39 @@ Berikan tepat 4 watak utama dan tepat 12 outline bab.
   try {
     const parsed = JSON.parse(extractJsonObject(raw)) as GeneratedNovelBible;
     const supabase = getSupabaseAdminClient();
-    let saved = false;
-    let saveError: string | undefined;
+    const { saved, saveError } = await saveGenerationJob(
+      supabase,
+      "novel_bible",
+      {
+        premise,
+        genre,
+        tone,
+        audience,
+        updateCadence,
+      },
+      parsed,
+    );
+
+    let bibleId: string | undefined;
 
     if (supabase) {
-      const { error } = await supabase.from("generation_jobs").insert({
-        job_type: "novel_bible",
-        input_payload: {
-          premise,
+      const { data, error } = await supabase
+        .from("book_bibles")
+        .insert({
+          title: parsed.title,
           genre,
-          tone,
-          audience,
-          updateCadence,
-        },
-        output_payload: parsed,
-        status: "completed",
-      });
+          premise,
+          payload: parsed,
+        })
+        .select("id")
+        .single();
 
-      if (error) {
-        saveError = error.message;
-      } else {
-        saved = true;
+      if (!error) {
+        bibleId = data.id;
       }
     }
 
-    return NextResponse.json({ data: parsed, saved, saveError });
+    return NextResponse.json({ data: parsed, saved, saveError, bibleId });
   } catch {
     return NextResponse.json(
       { error: "Failed to parse model response as JSON.", raw },

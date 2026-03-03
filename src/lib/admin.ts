@@ -5,6 +5,10 @@ export type GeneratedNovelBible = {
   hook: string;
   audience: string;
   tags: string[];
+  seoTitle: string;
+  seoDescription: string;
+  recommendationCopy: string;
+  coverPrompt: string;
   worldSummary: string;
   mainCharacters: Array<{
     name: string;
@@ -17,6 +21,24 @@ export type GeneratedNovelBible = {
     focus: string;
     cliffhanger: string;
   }>;
+};
+
+export type GeneratedChapterOutline = {
+  chapter: number;
+  title: string;
+  focus: string;
+  cliffhanger: string;
+  beats: string[];
+};
+
+export type GeneratedChapterDraft = {
+  title: string;
+  excerpt: string;
+  content: string[];
+  wordCount: number;
+  seoTitle: string;
+  seoDescription: string;
+  recommendationCopy: string;
 };
 
 export function extractJsonObject(raw: string) {
@@ -40,4 +62,12 @@ export function isAuthorizedAdminToken(token: string | null) {
   }
 
   return token === adminToken;
+}
+
+export function estimateWordCount(paragraphs: string[]) {
+  return paragraphs
+    .join(" ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean).length;
 }

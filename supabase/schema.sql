@@ -58,10 +58,48 @@ create table if not exists public.generation_jobs (
   created_at timestamptz not null default timezone('utc', now())
 );
 
+create table if not exists public.book_bibles (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  genre text not null,
+  premise text not null,
+  payload jsonb not null,
+  created_at timestamptz not null default timezone('utc', now())
+);
+
+create table if not exists public.chapter_outlines (
+  id uuid primary key default gen_random_uuid(),
+  book_bible_id uuid references public.book_bibles(id) on delete cascade,
+  book_title text not null,
+  chapter_number integer not null,
+  title text not null,
+  focus text not null,
+  cliffhanger text not null,
+  beats jsonb not null default '[]'::jsonb,
+  created_at timestamptz not null default timezone('utc', now())
+);
+
+create table if not exists public.chapter_drafts (
+  id uuid primary key default gen_random_uuid(),
+  book_bible_id uuid references public.book_bibles(id) on delete cascade,
+  chapter_outline_id uuid references public.chapter_outlines(id) on delete set null,
+  book_title text not null,
+  chapter_number integer not null,
+  title text not null,
+  excerpt text not null,
+  content jsonb not null default '[]'::jsonb,
+  word_count integer not null default 0,
+  seo_payload jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default timezone('utc', now())
+);
+
 alter table public.books enable row level security;
 alter table public.chapters enable row level security;
 alter table public.release_schedules enable row level security;
 alter table public.generation_jobs enable row level security;
+alter table public.book_bibles enable row level security;
+alter table public.chapter_outlines enable row level security;
+alter table public.chapter_drafts enable row level security;
 
 drop policy if exists "Public can read published books" on public.books;
 create policy "Public can read published books"
@@ -81,4 +119,19 @@ using (true);
 drop policy if exists "No public access to generation jobs" on public.generation_jobs;
 create policy "No public access to generation jobs"
 on public.generation_jobs for select
+using (false);
+
+drop policy if exists "No public access to book bibles" on public.book_bibles;
+create policy "No public access to book bibles"
+on public.book_bibles for select
+using (false);
+
+drop policy if exists "No public access to chapter outlines" on public.chapter_outlines;
+create policy "No public access to chapter outlines"
+on public.chapter_outlines for select
+using (false);
+
+drop policy if exists "No public access to chapter drafts" on public.chapter_drafts;
+create policy "No public access to chapter drafts"
+on public.chapter_drafts for select
 using (false);
