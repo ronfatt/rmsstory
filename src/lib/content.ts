@@ -133,3 +133,8 @@ export async function getChapterBySlug(slug: string, chapterNumber: number): Pro
   const novel = await getNovelBySlug(slug);
   return novel?.chapters.find((chapter) => chapter.number === chapterNumber);
 }
+
+export async function getRelatedNovels(slug: string, limit = 3) {
+  const allNovels = await getNovels();
+  return allNovels.filter((novel) => novel.slug !== slug).slice(0, limit);
+}

@@ -12,9 +12,14 @@ export default function AdminPage() {
               Generator untuk memulakan siri baharu.
             </h1>
           </div>
-          <Link href="/" className="text-sm font-semibold text-[var(--accent-deep)] underline underline-offset-4">
-            Kembali ke laman utama
-          </Link>
+          <div className="flex gap-4 text-sm font-semibold">
+            <Link href="/admin/library" className="text-[var(--accent-deep)] underline underline-offset-4">
+              Lihat library
+            </Link>
+            <Link href="/" className="text-[var(--accent-deep)] underline underline-offset-4">
+              Kembali ke laman utama
+            </Link>
+          </div>
         </div>
 
         <p className="mt-5 max-w-3xl text-base leading-8 text-[var(--muted)]">
