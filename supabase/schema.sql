@@ -31,6 +31,7 @@ create table if not exists public.chapters (
   content jsonb not null default '[]'::jsonb,
   published_at_label text not null,
   is_published boolean not null default false,
+  scheduled_for timestamptz,
   published_at timestamptz,
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now()),

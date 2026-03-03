@@ -16,6 +16,9 @@ export function LibraryManager({ publishedBooks, draftBooks }: LibraryManagerPro
   const [genreFilter, setGenreFilter] = useState("all");
   const [view, setView] = useState<"all" | "published" | "drafts">("all");
   const [feedback, setFeedback] = useState<string>("");
+  const [initialPublishedChapters, setInitialPublishedChapters] = useState("3");
+  const [releaseHour, setReleaseHour] = useState("19");
+  const [releaseMinute, setReleaseMinute] = useState("0");
   const [isPending, startTransition] = useTransition();
 
   const genres = useMemo(() => {
@@ -108,6 +111,48 @@ export function LibraryManager({ publishedBooks, draftBooks }: LibraryManagerPro
             className="rounded-[16px] border border-[var(--border)] bg-white/80 px-4 py-3 text-sm outline-none"
           />
         </div>
+        <div className="mt-4 grid gap-4 lg:grid-cols-3">
+          <label className="text-sm font-semibold text-[var(--accent-deep)]">
+            首发章节数
+            <input
+              value={initialPublishedChapters}
+              onChange={(event) => setInitialPublishedChapters(event.target.value)}
+              className="mt-2 w-full rounded-[16px] border border-[var(--border)] bg-white/80 px-4 py-3 text-sm outline-none"
+            />
+          </label>
+          <label className="text-sm font-semibold text-[var(--accent-deep)]">
+            日更小时
+            <input
+              value={releaseHour}
+              onChange={(event) => setReleaseHour(event.target.value)}
+              className="mt-2 w-full rounded-[16px] border border-[var(--border)] bg-white/80 px-4 py-3 text-sm outline-none"
+            />
+          </label>
+          <label className="text-sm font-semibold text-[var(--accent-deep)]">
+            日更分钟
+            <input
+              value={releaseMinute}
+              onChange={(event) => setReleaseMinute(event.target.value)}
+              className="mt-2 w-full rounded-[16px] border border-[var(--border)] bg-white/80 px-4 py-3 text-sm outline-none"
+            />
+          </label>
+        </div>
+        <div className="mt-4">
+          <button
+            type="button"
+            disabled={isPending || !adminToken}
+            onClick={() =>
+              runAction(
+                "/api/admin/run-scheduled-publishing",
+                {},
+                "已执行一次定时发布检查，符合时间的章节会自动上架。",
+              )
+            }
+            className="rounded-full border border-[var(--border)] bg-white/85 px-5 py-3 text-sm font-semibold text-[var(--foreground)] disabled:opacity-60"
+          >
+            立即执行一次定时发布
+          </button>
+        </div>
         {feedback ? <p className="mt-4 text-sm text-[var(--accent-deep)]">{feedback}</p> : null}
       </section>
 
@@ -136,6 +181,13 @@ export function LibraryManager({ publishedBooks, draftBooks }: LibraryManagerPro
                 <div className="mt-5 space-y-2 text-sm text-[var(--muted)]">
                   <p>已发布 {book.chapterCount} 章</p>
                   <p>{book.status}</p>
+                  <p>
+                    日更时间：
+                    {book.releaseHour !== undefined
+                      ? ` ${String(book.releaseHour).padStart(2, "0")}:${String(book.releaseMinute ?? 0).padStart(2, "0")}`
+                      : " 未设置"}
+                  </p>
+                  <p>待自动发布：{book.nextChapterCount} 章</p>
                   <p>{book.publishedAt ? new Date(book.publishedAt).toLocaleDateString("ms-MY") : ""}</p>
                 </div>
                 <div className="mt-4 flex flex-wrap gap-3">
@@ -213,8 +265,14 @@ export function LibraryManager({ publishedBooks, draftBooks }: LibraryManagerPro
                         onClick={() =>
                           runAction(
                             "/api/admin/publish-draft",
-                            { bibleId: book.id },
-                            `《${book.title}》已发布到正式书库。`,
+                            {
+                              bibleId: book.id,
+                              initialPublishedChapters,
+                              releaseHour,
+                              releaseMinute,
+                              timezone: "Asia/Kuala_Lumpur",
+                            },
+                            `《${book.title}》已发布，并设置为每日 ${releaseHour}:${releaseMinute.padStart(2, "0")} 自动更新。`,
                           )
                         }
                         className="rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
